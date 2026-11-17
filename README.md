@@ -1,1 +1,1 @@
-# Cambodia-Heritage-AI
+# Cambodia Heritage AI
