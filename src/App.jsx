@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, CircleDollarSign, Clock3, Fuel, Gauge, Info, Leaf, MapPin, Navigation, PlugZap, Route, Settings2, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
-import Logo from './components/Logo'
 import MapView from './components/MapView'
 import { vehicleGroups } from './data/vehicles'
 import { provinces, stations } from './data/places'
@@ -18,7 +17,7 @@ function Select({value,onChange,children}){return <div className="relative"><sel
 function Welcome({onStart}){return <main className="welcome min-h-screen overflow-hidden px-5 text-white">
   <div className="absolute inset-0 bg-grid opacity-30"/>
   <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col">
-    <header className="flex items-center gap-3 py-7"><Logo className="h-11 w-11 shrink-0 drop-shadow-lg"/><div><div className="text-xl font-black tracking-tight">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[10px] uppercase tracking-[.24em] text-slate-500">Cambodia mobility intelligence</div></div></header>
+    <header className="flex items-center gap-3 py-7"><div className="grid h-11 w-11 place-items-center rounded-xl bg-emeraldx text-ink shadow-glow"><Route size={24}/></div><div><div className="text-xl font-black tracking-tight">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[10px] uppercase tracking-[.24em] text-slate-500">Cambodia mobility intelligence</div></div></header>
     <section className="grid flex-1 items-center gap-12 py-12 lg:grid-cols-[1.05fr_.95fr]">
       <div className="max-w-2xl"><div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emeraldx/25 bg-emeraldx/10 px-4 py-2 text-xs font-semibold text-emeraldx"><Sparkles size={14}/> Built for Cambodia's highways</div>
         <h1 className="text-5xl font-black leading-[1.06] tracking-tight sm:text-7xl">Every kilometre.<br/><span className="text-emeraldx">Smarter.</span></h1>
@@ -131,7 +130,7 @@ function TripPlanner({config,onChangeVehicle}) {
   return <div className="relative h-screen min-h-[720px] w-full overflow-hidden bg-slate-950 text-white">
     <div className="absolute inset-0"><MapView origin={origin} destination={destination} route={routePoints} stations={stations} filter={filter} onMapClick={handleMapClick} rangePoint={rangePoint}/></div>
     <div className="pointer-events-none absolute inset-0 z-[400] bg-gradient-to-r from-ink/35 via-transparent to-transparent"/>
-    <div className="pointer-events-none absolute left-4 top-4 z-[500] flex items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 py-2 shadow-xl backdrop-blur"><Logo className="h-8 w-8 shrink-0"/><div><div className="text-sm font-black">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[9px] uppercase tracking-widest text-slate-500">Cambodia trip planner</div></div></div>
+    <div className="pointer-events-none absolute left-4 top-4 z-[500] flex items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 py-2 shadow-xl backdrop-blur"><div className="grid h-8 w-8 place-items-center rounded-lg bg-emeraldx text-ink"><Route size={18}/></div><div><div className="text-sm font-black">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[9px] uppercase tracking-widest text-slate-500">Cambodia trip planner</div></div></div>
     <div className="pointer-events-none absolute right-4 top-4 z-[500] flex gap-2"><button onClick={onChangeVehicle} className="pointer-events-auto flex items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 py-2 text-xs font-bold shadow-xl backdrop-blur hover:border-emeraldx/50"><Settings2 size={15}/> Change vehicle</button></div>
     <div className="absolute bottom-4 left-4 right-4 top-[76px] z-[500] flex items-start justify-between gap-4 pointer-events-none">
       <div className="pointer-events-auto flex max-h-full w-full max-w-[390px] flex-col gap-3 overflow-y-auto pr-1">
