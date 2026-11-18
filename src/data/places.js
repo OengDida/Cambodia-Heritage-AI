@@ -1,0 +1,50 @@
+export const provinces = [
+  { name:'Phnom Penh', lat:11.5564, lng:104.9282 },
+  { name:'Siem Reap', lat:13.3633, lng:103.8564 },
+  { name:'Preah Sihanouk / Sihanoukville', lat:10.6275, lng:103.5221 },
+  { name:'Battambang', lat:13.0957, lng:103.2022 },
+  { name:'Kampot', lat:10.5942, lng:104.1640 },
+  { name:'Kep', lat:10.4829, lng:104.3167 },
+  { name:'Mondulkiri / Sen Monorom', lat:12.4558, lng:107.1881 },
+  { name:'Ratanakiri / Banlung', lat:13.7394, lng:106.9873 },
+  { name:'Kampong Cham', lat:11.9934, lng:105.4635 },
+  { name:'Kratie', lat:12.4881, lng:106.0188 },
+  { name:'Koh Kong', lat:11.6153, lng:102.9838 },
+  { name:'Kampong Thom', lat:12.7111, lng:104.8887 },
+  { name:'Poipet', lat:13.6581, lng:102.5625 },
+  { name:'Pursat', lat:12.5388, lng:103.9192 },
+  { name:'Takeo', lat:10.9908, lng:104.7849 }
+]
+
+// Locations combine public EV map references with illustrative highway fuel-hub pins.
+// Confirm connector, hours and service availability with the operator before departure.
+export const stations = [
+  {id:1,name:'PTT Kampong Thom',brand:'PTT',type:'hybrid_hub',road:'NR6',lat:12.7052,lng:104.8912,hours:'24/7',connectors:['GB/T','CCS2'],note:'Highway hub · verify charger status'},
+  {id:2,name:'PTT Charging Station Sihanoukville',brand:'PTT',type:'hybrid_hub',road:'NR4',lat:10.6344,lng:103.5445,hours:'24/7',connectors:['GB/T','CCS2']},
+  {id:3,name:'PTT Kampong Cham',brand:'PTT',type:'hybrid_hub',road:'NR7',lat:11.9926,lng:105.4519,hours:'24/7',connectors:['GB/T']},
+  {id:4,name:'PTT Neakvoan',brand:'PTT',type:'hybrid_hub',road:'NR1',lat:11.5708,lng:104.9056,hours:'24/7',connectors:['GB/T','CCS2']},
+  {id:5,name:'PTT Prek Pnov',brand:'PTT',type:'hybrid_hub',road:'NR5',lat:11.6794,lng:104.8506,hours:'24/7',connectors:['GB/T']},
+  {id:6,name:'PTT Veng Sreng',brand:'PTT',type:'hybrid_hub',road:'NR3',lat:11.5319,lng:104.8614,hours:'24/7',connectors:['GB/T','CCS2']},
+  {id:7,name:'PTT Prey Kei',brand:'PTT',type:'hybrid_hub',road:'NR3',lat:11.4875,lng:104.8161,hours:'24/7',connectors:['GB/T']},
+  {id:8,name:'PTT Phnom Penh Tmei',brand:'PTT',type:'hybrid_hub',road:'NR5',lat:11.5742,lng:104.8856,hours:'5am–9pm',connectors:['GB/T']},
+  {id:9,name:'PTT Chbar Ompov',brand:'PTT',type:'hybrid_hub',road:'NR1',lat:11.5328,lng:104.9539,hours:'24/7',connectors:['GB/T','CCS2']},
+  {id:10,name:'2002 Café (NR7)',brand:'EVizee',type:'ev_only',road:'NR7',lat:11.9926,lng:105.4519,hours:'24/7',connectors:['GB/T']},
+  {id:11,name:'Cam EV Charging',brand:'EVizee',type:'ev_only',road:'NR7',lat:12.4956,lng:106.0171,hours:'24/7',connectors:['GB/T','CCS2']},
+  {id:12,name:'NOVA Resort Mondulkiri',brand:'EVizee',type:'ev_only',road:'NR76',lat:12.3755,lng:107.1740,hours:'24/7',connectors:['GB/T','CCS2']},
+  {id:13,name:'Pa Pa Gasoline Station',brand:'EVizee',type:'hybrid_hub',road:'NR76',lat:12.4583,lng:107.1833,hours:'24/7',connectors:['GB/T']},
+  {id:14,name:'Novotel Sihanoukville',brand:'EVizee',type:'ev_only',road:'NR4',lat:10.6107,lng:103.5030,hours:'24/7',connectors:['GB/T','CCS2']},
+  {id:15,name:'Phat Power Hotel',brand:'EVizee',type:'ev_only',road:'NR4',lat:10.5708,lng:103.5576,hours:'24/7',connectors:['GB/T']},
+  {id:16,name:'Paris Guest House Pursat',brand:'EVizee',type:'ev_only',road:'NR5',lat:12.5325,lng:104.2091,hours:'24/7',connectors:['GB/T']},
+  {id:17,name:'Radio FM 104.5 Preah Vihear',brand:'EVizee',type:'ev_only',road:'NR6',lat:13.7950,lng:104.9909,hours:'24/7',connectors:['GB/T']},
+  {id:18,name:'Asia Mart Siem Reap',brand:'EVizee',type:'ev_only',road:'NR6',lat:13.3576,lng:103.8540,hours:'24/7',connectors:['GB/T','CCS2']},
+  {id:19,name:'Paris Angkor Hotel',brand:'EVizee',type:'ev_only',road:'NR6',lat:13.3630,lng:103.8544,hours:'24/7',connectors:['GB/T']},
+  {id:20,name:'Poi Pet Resort',brand:'EVizee',type:'ev_only',road:'NR5',lat:13.6454,lng:102.5697,hours:'24/7',connectors:['GB/T']},
+  {id:21,name:'Tela Highway Hub · Skun',brand:'Tela',type:'gas_only',road:'NR6/NR7',lat:12.0060,lng:105.0350,hours:'24/7',connectors:[]},
+  {id:22,name:'Sokimex Highway Stop · Kampong Thom',brand:'Sokimex',type:'gas_only',road:'NR6',lat:12.6100,lng:104.9100,hours:'24/7',connectors:[]},
+  {id:23,name:'TotalEnergies · Takeo Road',brand:'TotalEnergies',type:'gas_only',road:'NR2',lat:11.0800,lng:104.7900,hours:'6am–10pm',connectors:[]},
+  {id:24,name:'Caltex · Kampot Junction',brand:'Caltex',type:'gas_only',road:'NR3',lat:10.6500,lng:104.0500,hours:'24/7',connectors:[]},
+  {id:25,name:'Expressway Charger · Phnom Penh',brand:'Expressway Charger',type:'ev_only',road:'PP–SHV Expressway',lat:11.4700,lng:104.7400,hours:'24/7',connectors:['CCS2','GB/T']},
+  {id:26,name:'Tela · Battambang Highway',brand:'Tela',type:'gas_only',road:'NR5',lat:13.0200,lng:103.2500,hours:'24/7',connectors:[]},
+  {id:27,name:'Sokimex · Kratie',brand:'Sokimex',type:'gas_only',road:'NR7',lat:12.4900,lng:106.0200,hours:'6am–10pm',connectors:[]},
+  {id:28,name:'PTT · Kampot',brand:'PTT',type:'hybrid_hub',road:'NR3',lat:10.5942,lng:104.1640,hours:'24/7',connectors:['GB/T']}
+]
