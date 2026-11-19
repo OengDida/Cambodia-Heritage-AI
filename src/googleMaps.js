@@ -91,6 +91,10 @@ export async function computeGoogleRoute(origin, destination) {
     origin: { lat: origin.lat, lng: origin.lng },
     destination: { lat: destination.lat, lng: destination.lng },
     travelMode: 'DRIVING',
+    // Match the live-traffic route and travel-time behavior people expect
+    // from Google Maps, instead of returning a static/unaware duration.
+    routingPreference: 'TRAFFIC_AWARE',
+    departureTime: new Date(),
     region: 'kh',
     fields: ['distanceMeters', 'durationMillis', 'path'],
   })
@@ -107,6 +111,7 @@ export async function computeGoogleRoute(origin, destination) {
     path,
     distanceMeters: route.distanceMeters,
     durationMillis: route.durationMillis,
+    source: 'Google Routes',
   }
 }
 

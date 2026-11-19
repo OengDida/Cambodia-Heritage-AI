@@ -78,8 +78,11 @@ export default function MapView({ origin, destination, route, stations = [], fil
     if (route?.length > 1) line = new maps.Polyline({
       map: instance,
       path: route.map(([lng, lat]) => ({ lat, lng })),
-      geodesic: true,
-      strokeColor: '#20d69a', strokeOpacity: 0.9, strokeWeight: 5,
+      // `route` is the road-following path returned by Google Routes.
+      // Keep segments on Google's projected road geometry (not great-circle
+      // shortcuts) and use the familiar Google route blue.
+      geodesic: false,
+      strokeColor: '#4285F4', strokeOpacity: 0.96, strokeWeight: 6,
     })
     const points = [origin, destination].filter(Boolean)
     if (points.length === 2) {

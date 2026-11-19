@@ -303,6 +303,7 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
   const [origin,setOrigin]=useState(()=>initialLocation?{lat:initialLocation.lat,lng:initialLocation.lng,name:'Current location',isCurrentLocation:true}:null)
   const [destination,setDestination]=useState(null)
   const [route,setRoute]=useState([])
+  const hasGoogleRoute=route.length>1
   const [distance,setDistance]=useState(0)
   const [duration,setDuration]=useState(0)
   const [routeStatus,setRouteStatus]=useState('Choose an origin and destination')
@@ -331,12 +332,12 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
   const consumption=config.consumption||1
   const currentRange=config.capacity*(config.level/100)/(consumption/100)
   const rangePoint=useMemo(()=>{
-    if(!route.length||distance<=currentRange)return null
+    if(!hasGoogleRoute||distance<=currentRange)return null
     const fraction=Math.min(.98,currentRange/distance)
     const index=Math.max(0,Math.min(route.length-1,Math.floor(fraction*(route.length-1))))
     const p=route[index]
     return p?{lat:p[1],lng:p[0]}:null
-  },[route,distance,currentRange])
+  },[route,hasGoogleRoute,distance,currentRange])
   const alongStations=useMemo(()=>stations.map(s=>({...s,routeMeta:nearestOnRoute(s,route)})).filter(s=>s.routeMeta.along<distance+1).sort((a,b)=>a.routeMeta.along-b.routeMeta.along),[route,distance])
   const findRouteStations=async()=>{
     setSearchedFilter(filter);setShowStations(true);setGoogleStations([])
@@ -351,20 +352,20 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
   }
   const suitable=alongStations.filter(s=>isEV?s.type!=='gas_only':s.type!=='ev_only')
   const recommended=suitable.filter(s=>s.routeMeta.along>0&&s.routeMeta.along<Math.min(distance,currentRange*0.85+15)).slice(0,3)
-  const need=distance*consumption/100
+  const need=hasGoogleRoute?distance*consumption/100:0
   const costRate=isEV?rates.ev:config.energy==='diesel'?rates.diesel:rates.gasoline
   const totalCost=need*costRate
   const fuelOnlyConsumption=isPHEV?vehicle.fuelOnlyConsumption:comparisonFuelConsumption
   const electricOnlyConsumption=isPHEV?vehicle.electricConsumption:comparisonElectricConsumption
-  const hybridFuelNeed=isHybrid?distance*fuelOnlyConsumption/100:need
-  const hybridElectricNeed=isHybrid?distance*electricOnlyConsumption/100:0
+  const hybridFuelNeed=hasGoogleRoute?(isHybrid?distance*fuelOnlyConsumption/100:need):0
+  const hybridElectricNeed=hasGoogleRoute&&isHybrid?distance*electricOnlyConsumption/100:0
   const hybridFuelCost=hybridFuelNeed*(config.energy==='diesel'?rates.diesel:rates.gasoline)
   const hybridElectricRate=isPHEV?rates.phevAc:rates.ev
   const hybridElectricCost=hybridElectricNeed*hybridElectricRate
-  const gasCost=distance*(isPHEV?vehicle.fuelOnlyConsumption:comparisonFuelConsumption)/100*rates.gasoline
-  const evCost=distance*(isPHEV?vehicle.electricConsumption:comparisonElectricConsumption)/100*hybridElectricRate
+  const gasCost=hasGoogleRoute?distance*(isPHEV?vehicle.fuelOnlyConsumption:comparisonFuelConsumption)/100*rates.gasoline:0
+  const evCost=hasGoogleRoute?distance*(isPHEV?vehicle.electricConsumption:comparisonElectricConsumption)/100*hybridElectricRate:0
   const save=Math.abs(gasCost-evCost)
-  const lowRange=distance>currentRange
+  const lowRange=hasGoogleRoute&&distance>currentRange
   const routePoints=route.length?route:[]
   const calculate=async(a=origin,b=destination)=>{
     const requestId=++routeRequestRef.current
@@ -377,6 +378,8 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
     }
     setGoogleStations(null)
     setStationSearch({status:'idle',progress:0,total:0,count:0,error:'',failedAreas:0})
+    setRoute([])
+    setDistance(0);setDuration(0)
     setRouteStatus('Calculating Google route…');setRouteError('')
     try{
       const result=await computeGoogleRoute(a,b)
@@ -384,15 +387,14 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
       setRoute(result.path)
       setDistance(result.distanceMeters/1000)
       setDuration(result.durationMillis/60000)
-      setRouteStatus('Google Maps driving route')
+      setRouteStatus('Google Routes · traffic-aware driving route')
       setRouteError('')
     }catch(error){
       if(requestId!==routeRequestRef.current)return
-      const d=kmLine(a,b)*1.22
-      setRoute([[a.lng,a.lat],[b.lng,b.lat]])
-      setDistance(d);setDuration(d/65*60)
-      setRouteStatus('Straight-line estimate · Google Routes unavailable')
-      setRouteError(`${googleMapsErrorMessage(error,'Google Routes')} Showing an approximate straight-line estimate.`)
+      setRoute([])
+      setDistance(0);setDuration(0)
+      setRouteStatus('Google route unavailable')
+      setRouteError(`${googleMapsErrorMessage(error,'Google Routes')} No custom route or estimated distance/time was substituted.`)
     }
   }
   useEffect(()=>{calculate(origin,destination)},[])
@@ -446,6 +448,9 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
   }
   const recommendation=()=>{
     if(!origin||!destination)return `${vehicleName} has approximately ${Math.round(currentRange)} km of range at ${config.level}%. Choose an origin and destination to check the route, range and suggested stops.`
+    if(!hasGoogleRoute)return routeStatus==='Google route unavailable'
+      ?'Google could not return a driving route. Check the Routes API configuration and try again; distance, travel time and trip cost are not estimated.'
+      :'Waiting for Google Routes to return the driving route, distance and travel time.'
     if(lowRange){
       const stop=recommended[0]
       return stop?`${vehicleName} has approximately ${Math.round(currentRange)} km of range at ${config.level}% and the destination is ${Math.round(distance-currentRange)} km beyond that. Plan a stop at ${stop.name} (${stop.road}) before reaching the estimated range limit. Confirm the connector and live availability before departure.`:`Your estimated range (${Math.round(currentRange)} km) is shorter than this ${Math.round(distance)} km trip. No compatible station pin was found close to the displayed route corridor. Add a safety stop and verify local options before leaving.`
@@ -465,10 +470,10 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
 :googleStations.filter(s=>matchesFilter(s,filter)).map(s=><div key={s.id} className="rounded-lg bg-black/20 p-3"><div className="flex justify-between gap-2"><b className="text-[11px]">{s.name}</b><span className={cx('text-[9px] font-bold',typeBadge[s.type]?.[1])}>{typeBadge[s.type]?.[0]}</span>{s.status==='CLOSED_PERMANENTLY'&&<span className="text-[9px] text-rose-300">Permanently closed</span>}</div><div className="mt-1 text-[10px] text-slate-400">{s.detail||'Address not provided'}</div><a className="mt-1 inline-block text-[10px] font-bold text-emeraldx hover:underline" href={s.mapsUrl} target="_blank" rel="noopener noreferrer">View on Google Maps ↗</a></div>)}</div>}
         </Panel>
   const sidePanels=<>
-        <Panel className="p-4"><div className="text-xs font-extrabold">Route overview</div><div className="mt-3 flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-emeraldx"/><div className="text-xs font-semibold">{origin?origin.name:'Choose origin'}</div></div><div className="ml-1 my-1 h-5 border-l border-dashed border-slate-600"/><div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-amberx"/><div className="text-xs font-semibold">{destination?destination.name:'Choose destination'}</div></div><div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3"><div><div className="text-[10px] text-slate-500">Distance</div><b>{fmt(distance)} km</b></div><div><div className="text-[10px] text-slate-500">ETA</div><b>{fmtTime(duration)}</b></div></div></Panel>
-        <Panel className="p-4"><div className="mb-3 flex items-center gap-2 text-xs font-extrabold"><Activity size={15} className="text-emeraldx"/> Range & dead-zone monitor</div><div className="flex items-end justify-between"><span className="text-[10px] text-slate-500">Estimated remaining range</span><b className={lowRange?'text-rose-300':'text-emeraldx'}>{fmt(currentRange)} km</b></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className={cx('h-full rounded-full',lowRange?'bg-rose-400':'bg-emeraldx')} style={{width:`${Math.min(100,distance/currentRange*100)}%`}}/></div><div className="mt-2 text-[10px] leading-4 text-slate-400">{!origin||!destination?'Choose an origin and destination to check range.':lowRange?'Range limit falls before destination.':'Estimated range covers the route.'}</div></Panel>
+        <Panel className="p-4"><div className="text-xs font-extrabold">Route overview</div><div className="mt-3 flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-emeraldx"/><div className="text-xs font-semibold">{origin?origin.name:'Choose origin'}</div></div><div className="ml-1 my-1 h-5 border-l border-dashed border-slate-600"/><div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-amberx"/><div className="text-xs font-semibold">{destination?destination.name:'Choose destination'}</div></div><div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3"><div><div className="text-[10px] text-slate-500">Google distance</div><b>{hasGoogleRoute?`${fmt(distance)} km`:'—'}</b></div><div><div className="text-[10px] text-slate-500">Google drive time</div><b>{hasGoogleRoute?fmtTime(duration):'—'}</b></div></div></Panel>
+        <Panel className="p-4"><div className="mb-3 flex items-center gap-2 text-xs font-extrabold"><Activity size={15} className="text-emeraldx"/> Range & dead-zone monitor</div><div className="flex items-end justify-between"><span className="text-[10px] text-slate-500">Estimated remaining range</span><b className={lowRange?'text-rose-300':'text-emeraldx'}>{fmt(currentRange)} km</b></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className={cx('h-full rounded-full',lowRange?'bg-rose-400':'bg-emeraldx')} style={{width:`${hasGoogleRoute&&currentRange>0?Math.min(100,distance/currentRange*100):0}%`}}/></div><div className="mt-2 text-[10px] leading-4 text-slate-400">{!origin||!destination?'Choose an origin and destination to check range.':!hasGoogleRoute?'Waiting for a Google driving route.':lowRange?'Range limit falls before destination.':'Estimated range covers the route.'}</div></Panel>
         {stationFinderPanel}
-        <div className="rounded-xl border border-white/10 bg-ink/85 p-3 text-[10px] leading-4 text-slate-400 backdrop-blur"><Info size={13} className="mb-1 text-amberx"/> Google Maps route and travel-time results are estimates. Use “Pin (choose on map)” under origin or destination to place a custom pin.</div></>
+        <div className="rounded-xl border border-white/10 bg-ink/85 p-3 text-[10px] leading-4 text-slate-400 backdrop-blur"><Info size={13} className="mb-1 text-amberx"/> Blue line, distance, and drive time come from Google Routes (traffic-aware when available). If Google cannot calculate a route, no substitute route or ETA is shown. Use “Pin (choose on map)” to set a custom waypoint.</div></>
   return <div className="relative h-[100dvh] min-h-[480px] w-full overflow-hidden bg-slate-950 text-white lg:min-h-[720px]">
     <div className={cx('absolute inset-0',mapClickMode&&'pick-mode')}><MapView origin={origin} destination={destination} route={routePoints} stations={googleStations??[]} filter={filter} onMapClick={handleMapClick} rangePoint={rangePoint} initialLocation={initialLocation}/></div>
     <div className="pointer-events-none absolute inset-0 z-[400] bg-gradient-to-r from-ink/35 via-transparent to-transparent"/>
@@ -492,14 +497,14 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
           <p className="text-xs leading-5 text-slate-300">{recommendation()}</p>
           {lowRange&&<div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-400/25 bg-rose-400/10 p-3 text-[11px] leading-4 text-rose-200"><ShieldAlert size={16} className="shrink-0"/> Range warning: estimated range is shorter than the trip. Do not depart without a confirmed stop.</div>}
           <div className="mt-3 flex flex-wrap gap-2">{chips.map(c=><button key={c} onClick={()=>chipAction(c)} className="rounded-full border border-white/10 px-2.5 py-1.5 text-[10px] text-slate-300 hover:border-emeraldx/40 hover:text-emeraldx">{c}</button>)}</div>
-          {prompt&&<div className="mt-3 rounded-lg bg-white/5 p-3 text-[11px] leading-5 text-slate-300">{prompt==='Compare EV vs Gas cost'?`For this distance, illustrative EV cost is ${money(evCost,rates.usdToKhr)} versus gasoline at ${money(gasCost,rates.usdToKhr)}. Estimated difference: ${money(save,rates.usdToKhr)}.`:prompt==='Find 24/7 stops only'?'Station list opened below. Filter for compatible fuel or connectors and confirm the location before travel.':'Eco tip: maintain a steady highway speed, avoid hard acceleration, check tire pressure and reduce unnecessary cargo.'}</div>}
+          {prompt&&<div className="mt-3 rounded-lg bg-white/5 p-3 text-[11px] leading-5 text-slate-300">{prompt==='Compare EV vs Gas cost'?(hasGoogleRoute?`For this distance, illustrative EV cost is ${money(evCost,rates.usdToKhr)} versus gasoline at ${money(gasCost,rates.usdToKhr)}. Estimated difference: ${money(save,rates.usdToKhr)}.`:'Calculate a Google route first to compare trip costs.'):prompt==='Find 24/7 stops only'?'Station list opened below. Filter for compatible fuel or connectors and confirm the location before travel.':'Eco tip: maintain a steady highway speed, avoid hard acceleration, check tire pressure and reduce unnecessary cargo.'}</div>}
         </Panel>
         <Panel className="p-4">
           <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2 text-sm font-extrabold"><CircleDollarSign size={16} className="text-amberx"/> Trip cost estimate</div><button onClick={()=>setShowRates(x=>!x)} className="text-[10px] font-bold text-emeraldx">{showRates?'Close':'Edit rates'}</button></div>
-          <div className="grid grid-cols-2 gap-2"><div className="rounded-xl bg-black/20 p-3"><div className="text-[10px] text-slate-500">Distance</div><div className="mt-1 text-lg font-black">{fmt(distance)} <small className="text-xs text-slate-400">km</small></div></div><div className="rounded-xl bg-black/20 p-3"><div className="text-[10px] text-slate-500">Drive time</div><div className="mt-1 text-lg font-black">{fmtTime(duration)}</div></div></div>
-          {isHybrid?<><div className="mt-2 grid gap-2 sm:grid-cols-2"><div className="rounded-xl bg-black/20 p-3"><div className="flex justify-between text-[10px] text-slate-500"><span>Fuel-only estimate</span><span>L</span></div><div className="mt-1 text-xl font-black">{hybridFuelNeed.toFixed(1)} <small className="text-xs font-medium text-slate-400">L</small></div><div className="mt-1 text-[10px] text-slate-500">{isPHEV?'Vehicle rate':'Comparison'}: {fuelOnlyConsumption} L/100 km</div></div><div className="rounded-xl bg-black/20 p-3"><div className="flex justify-between text-[10px] text-slate-500"><span>Electric-only estimate</span><span>kWh</span></div><div className="mt-1 text-xl font-black">{hybridElectricNeed.toFixed(1)} <small className="text-xs font-medium text-slate-400">kWh</small></div><div className="mt-1 text-[10px] text-slate-500">{isPHEV?'Vehicle rate':'Comparison'}: {electricOnlyConsumption} kWh/100 km</div></div></div>{isPHEV&&distance>vehicle.range&&<div className="mt-2 rounded-lg border border-amberx/20 bg-amberx/10 p-2 text-[10px] leading-4 text-amberx">Trip exceeds this PHEV’s listed {fmt(vehicle.range)} km EV range by {fmt(distance-vehicle.range)} km. The electric-only estimate assumes the vehicle can be charged during the trip.</div>}</>:<div className="mt-2 rounded-xl bg-black/20 p-3"><div className="flex justify-between text-[10px] text-slate-500"><span>Estimated {isEV?'energy':'fuel'} required</span><span>{isEV?'kWh':'L'}</span></div><div className="mt-1 text-xl font-black">{need.toFixed(1)} <small className="text-xs font-medium text-slate-400">{isEV?'kWh':'L'}</small></div></div>}
-          {isHybrid?<div className="mt-2 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-amberx/20 bg-amberx/5 p-3"><div className="text-[10px] text-amberx/80">Estimated fuel-only trip cost</div><div className="mt-1 text-xl font-black">{money(hybridFuelCost,rates.usdToKhr).split(' · ')[0]}</div><div className="text-xs text-slate-400">{money(hybridFuelCost,rates.usdToKhr).split(' · ')[1]}</div><div className="mt-1 text-[10px] text-slate-500">Gasoline · {fmt(rates.gasoline)} ៛/L</div></div><div className="rounded-xl border border-blue-300/20 bg-blue-300/5 p-3"><div className="text-[10px] text-blue-200/80">Estimated electric-only trip cost</div><div className="mt-1 text-xl font-black">{money(hybridElectricCost,rates.usdToKhr).split(' · ')[0]}</div><div className="text-xs text-slate-400">{money(hybridElectricCost,rates.usdToKhr).split(' · ')[1]}</div><div className="mt-1 text-[10px] text-slate-500">{isPHEV?'AC / grid charging':'DC fast-charge'} · {fmt(hybridElectricRate)} ៛/kWh</div></div></div>:<div className="mt-2 flex items-end justify-between rounded-xl border border-amberx/20 bg-amberx/5 p-3"><div><div className="text-[10px] text-amberx/80">Estimated trip cost</div><div className="mt-1 text-xl font-black">{money(totalCost,rates.usdToKhr).split(' · ')[0]}</div><div className="text-xs text-slate-400">{money(totalCost,rates.usdToKhr).split(' · ')[1]}</div></div><div className="text-right text-[10px] text-slate-500">{isEV?'DC fast-charge tariff':config.energy==='diesel'?'Diesel tariff':'Gasoline tariff'}<br/>{fmt(costRate)} ៛ / {isEV?'kWh':'L'}</div></div>}
-          <div className="mt-3 flex items-center justify-between text-[10px]"><span className="text-slate-400">EV vs gasoline benchmark</span><span className="font-bold text-emeraldx">{evCost<=gasCost?'EV saves':'Gas saves'} {money(save,rates.usdToKhr)}</span></div>
+          <div className="grid grid-cols-2 gap-2"><div className="rounded-xl bg-black/20 p-3"><div className="text-[10px] text-slate-500">Google distance</div><div className="mt-1 text-lg font-black">{hasGoogleRoute?fmt(distance):'—'} <small className="text-xs text-slate-400">{hasGoogleRoute?'km':''}</small></div></div><div className="rounded-xl bg-black/20 p-3"><div className="text-[10px] text-slate-500">Google drive time</div><div className="mt-1 text-lg font-black">{hasGoogleRoute?fmtTime(duration):'—'}</div></div></div>
+          {isHybrid?<><div className="mt-2 grid gap-2 sm:grid-cols-2"><div className="rounded-xl bg-black/20 p-3"><div className="flex justify-between text-[10px] text-slate-500"><span>Fuel-only estimate</span><span>L</span></div><div className="mt-1 text-xl font-black">{hasGoogleRoute?hybridFuelNeed.toFixed(1):'—'} <small className="text-xs font-medium text-slate-400">{hasGoogleRoute?'L':''}</small></div><div className="mt-1 text-[10px] text-slate-500">{isPHEV?'Vehicle rate':'Comparison'}: {fuelOnlyConsumption} L/100 km</div></div><div className="rounded-xl bg-black/20 p-3"><div className="flex justify-between text-[10px] text-slate-500"><span>Electric-only estimate</span><span>kWh</span></div><div className="mt-1 text-xl font-black">{hasGoogleRoute?hybridElectricNeed.toFixed(1):'—'} <small className="text-xs font-medium text-slate-400">{hasGoogleRoute?'kWh':''}</small></div><div className="mt-1 text-[10px] text-slate-500">{isPHEV?'Vehicle rate':'Comparison'}: {electricOnlyConsumption} kWh/100 km</div></div></div>{isPHEV&&hasGoogleRoute&&distance>vehicle.range&&<div className="mt-2 rounded-lg border border-amberx/20 bg-amberx/10 p-2 text-[10px] leading-4 text-amberx">Trip exceeds this PHEV’s listed {fmt(vehicle.range)} km EV range by {fmt(distance-vehicle.range)} km. The electric-only estimate assumes the vehicle can be charged during the trip.</div>}</>:<div className="mt-2 rounded-xl bg-black/20 p-3"><div className="flex justify-between text-[10px] text-slate-500"><span>Estimated {isEV?'energy':'fuel'} required</span><span>{isEV?'kWh':'L'}</span></div><div className="mt-1 text-xl font-black">{hasGoogleRoute?need.toFixed(1):'—'} <small className="text-xs font-medium text-slate-400">{hasGoogleRoute?(isEV?'kWh':'L'):''}</small></div></div>}
+          {isHybrid?<div className="mt-2 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-amberx/20 bg-amberx/5 p-3"><div className="text-[10px] text-amberx/80">Estimated fuel-only trip cost</div><div className="mt-1 text-xl font-black">{hasGoogleRoute?money(hybridFuelCost,rates.usdToKhr).split(' · ')[0]:'—'}</div><div className="text-xs text-slate-400">{hasGoogleRoute?money(hybridFuelCost,rates.usdToKhr).split(' · ')[1]:''}</div><div className="mt-1 text-[10px] text-slate-500">Gasoline · {fmt(rates.gasoline)} ៛/L</div></div><div className="rounded-xl border border-blue-300/20 bg-blue-300/5 p-3"><div className="text-[10px] text-blue-200/80">Estimated electric-only trip cost</div><div className="mt-1 text-xl font-black">{hasGoogleRoute?money(hybridElectricCost,rates.usdToKhr).split(' · ')[0]:'—'}</div><div className="text-xs text-slate-400">{hasGoogleRoute?money(hybridElectricCost,rates.usdToKhr).split(' · ')[1]:''}</div><div className="mt-1 text-[10px] text-slate-500">{isPHEV?'AC / grid charging':'DC fast-charge'} · {fmt(hybridElectricRate)} ៛/kWh</div></div></div>:<div className="mt-2 flex items-end justify-between rounded-xl border border-amberx/20 bg-amberx/5 p-3"><div><div className="text-[10px] text-amberx/80">Estimated trip cost</div><div className="mt-1 text-xl font-black">{hasGoogleRoute?money(totalCost,rates.usdToKhr).split(' · ')[0]:'—'}</div><div className="text-xs text-slate-400">{hasGoogleRoute?money(totalCost,rates.usdToKhr).split(' · ')[1]:''}</div></div><div className="text-right text-[10px] text-slate-500">{isEV?'DC fast-charge tariff':config.energy==='diesel'?'Diesel tariff':'Gasoline tariff'}<br/>{fmt(costRate)} ៛ / {isEV?'kWh':'L'}</div></div>}
+          <div className="mt-3 flex items-center justify-between text-[10px]"><span className="text-slate-400">EV vs gasoline benchmark</span><span className="font-bold text-emeraldx">{hasGoogleRoute?<>{evCost<=gasCost?'EV saves':'Gas saves'} {money(save,rates.usdToKhr)}</>:'Google route required'}</span></div>
           {showRates&&<div className="mt-4 space-y-3 border-t border-white/10 pt-3"><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Editable reference tariffs (KHR)</div>{[['gasoline','Regular gasoline / L'],['diesel','Diesel / L'],['ev','Pure EV DC fast charge / kWh'],['phevAc','PHEV AC / grid charging / kWh'],['usdToKhr','USD → KHR']].map(([k,l])=><label key={k} className="flex items-center justify-between gap-3 text-[11px] text-slate-400">{l}<input className="field w-28 py-2 text-right" type="number" value={rates[k]} onChange={e=>setRates(p=>({...p,[k]:Number(e.target.value)}))}/></label>)}<div className="text-[9px] leading-4 text-slate-500">Fuel schedule reference: 11–21 Nov 2026. Electricity tariffs are editable; PHEVs use AC / grid charging and pure EV estimates use DC fast charging.</div></div>}
         </Panel>
 
