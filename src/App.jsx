@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, CircleDollarSign, Clock3, Fuel, Gauge, Info, Leaf, MapPin, Navigation, PlugZap, Route, Settings2, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
+import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, CircleDollarSign, Clock3, Fuel, Gauge, Info, LocateFixed, Leaf, MapPin, Navigation, PlugZap, Route, Settings2, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
 import MapView from './components/MapView'
 import { vehicleGroups } from './data/vehicles'
 import { provinces, stations } from './data/places'
@@ -71,6 +71,8 @@ function TripPlanner({config,onChangeVehicle}) {
   const [mapClickMode,setMapClickMode]=useState('origin')
   const [routeError,setRouteError]=useState(false)
   const [showStations,setShowStations]=useState(false)
+  const [locating,setLocating]=useState(false)
+  const [locNote,setLocNote]=useState('')
   const vehicleName=config.modified?(config.customName||'Custom vehicle'):(vehicleGroups.find(g=>g.id===config.category)?.items.find(v=>v.id===config.model)?.name||'Vehicle')
   const isEV=config.energy==='electric'
   const consumption=config.consumption||1
@@ -118,6 +120,27 @@ function TripPlanner({config,onChangeVehicle}) {
     if(mapClickMode==='origin'){setOrigin(pin);setOriginName('Custom map pin');calculate(pin,destination);setMapClickMode('destination')}
     else {setDestination(pin);setDestinationName('Custom map pin');calculate(origin,pin)}
   }
+  const useCurrentLocation=()=>{
+    if(!('geolocation' in navigator)){setLocNote('Location is not supported by this browser.');return}
+    setLocating(true);setLocNote('')
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        const {latitude:lat,longitude:lng}=pos.coords
+        const nearest=provinces.map(x=>({...x,d:kmLine(x,{lat,lng})})).sort((a,b)=>a.d-b.d)[0]
+        const inCambodia=lat>=9.9&&lat<=14.8&&lng>=102.2&&lng<=107.8
+        const pin={lat,lng,name:`Current location (near ${nearest.name})`}
+        setOrigin(pin);setOriginName('Current location');setMapClickMode('destination')
+        setLocNote(inCambodia?`Origin set to your location, near ${nearest.name}.`:'Your location appears to be outside Cambodia. Routes and stations may not be useful.')
+        setLocating(false)
+        calculate(pin,destination)
+      },
+      err=>{
+        setLocating(false)
+        setLocNote(err.code===1?'Location permission denied. Allow location access in your browser settings and try again.':err.code===2?'Your location could not be determined. Try again or pick an origin manually.':'Location request timed out. Try again or pick an origin manually.')
+      },
+      {enableHighAccuracy:true,timeout:10000,maximumAge:60000}
+    )
+  }
   const recommendation=()=>{
     if(lowRange){
       const stop=recommended[0]
@@ -136,7 +159,9 @@ function TripPlanner({config,onChangeVehicle}) {
       <div className="pointer-events-auto flex max-h-full w-full max-w-[390px] flex-col gap-3 overflow-y-auto pr-1">
         <Panel className="p-4">
           <div className="mb-3 flex items-center justify-between"><div className="text-sm font-extrabold">Plan your journey</div><span className="rounded-full bg-emeraldx/10 px-2 py-1 text-[9px] font-bold uppercase text-emeraldx">Step 03 / Route</span></div>
-          <Field label="Origin"><Select value={provinces.some(p=>p.name===originName)?originName:''} onChange={updateOrigin}><option value="" disabled>Choose origin</option>{provinces.map(p=><option key={p.name}>{p.name}</option>)}</Select></Field>
+          <Field label="Origin"><Select value={provinces.some(p=>p.name===originName)||originName==='Current location'?originName:''} onChange={updateOrigin}><option value="" disabled>Choose origin</option>{originName==='Current location'&&<option value="Current location" disabled>Current location</option>}{provinces.map(p=><option key={p.name}>{p.name}</option>)}</Select></Field>
+          <button onClick={useCurrentLocation} disabled={locating} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emeraldx/30 bg-emeraldx/5 py-2.5 text-xs font-bold text-emeraldx transition hover:bg-emeraldx/10 disabled:opacity-60"><LocateFixed size={15} className={locating?'animate-pulse':''}/>{locating?'Locating…':'Use current location'}</button>
+          {locNote&&<div className="mt-2 text-[10px] leading-4 text-slate-400">{locNote}</div>}
           <div className="my-2 flex items-center justify-between"><span className="text-[10px] text-slate-500">Tap map to set a pin</span><button onClick={()=>setMapClickMode(x=>x==='origin'?'destination':'origin')} className="text-[10px] font-bold text-emeraldx">Pin next: {mapClickMode}</button></div>
           <Field label="Destination"><Select value={provinces.some(p=>p.name===destinationName)?destinationName:''} onChange={updateDestination}><option value="" disabled>Choose destination</option>{provinces.map(p=><option key={p.name}>{p.name}</option>)}</Select></Field>
           <div className="mt-3 flex items-center justify-between rounded-xl bg-black/20 p-3"><div><div className="text-[10px] uppercase text-slate-500">Vehicle</div><div className="mt-1 text-xs font-bold">{vehicleName}</div></div><div className="text-right"><div className="text-[10px] uppercase text-slate-500">Current level</div><div className="mt-1 text-sm font-black text-emeraldx">{config.level}%</div></div></div>
