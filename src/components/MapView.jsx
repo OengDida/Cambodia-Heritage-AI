@@ -27,7 +27,8 @@ export default function MapView({ origin, destination, route, stations, filter, 
       instance = new Map(host.current, {
         center: { lat: 12.15, lng: 104.90 }, zoom: 7,
         mapTypeControl: true, streetViewControl: false, fullscreenControl: true,
-        clickableIcons: true,
+        clickableIcons: false,
+        styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }],
       })
       instance.addListener('click', event => {
         if (event.latLng) clickRef.current?.({ lat: event.latLng.lat(), lng: event.latLng.lng() })
