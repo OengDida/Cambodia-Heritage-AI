@@ -63,9 +63,7 @@ SmartRoute AI is a browser-based trip-planning application that combines road-ro
 | React 18 | Frontend framework |
 | Vite 6 | Development and build tool |
 | Tailwind CSS 3 | Styling |
-| Leaflet | Interactive maps |
-| React Leaflet | React map integration |
-| OpenStreetMap | Map tiles |
+| Google Maps Platform | Interactive maps and Google Places search |
 | OSRM | Road routing and travel-time estimates |
 | Lucide React | Icons |
 | JavaScript | Application logic |
@@ -105,6 +103,18 @@ npm run dev
 ```
 
 Open the local URL displayed in your terminal to access SmartRoute AI.
+
+### Configure Google Maps
+
+The map and origin/destination search use Google Maps Platform. In Google Cloud, enable Maps JavaScript API and Places API (New), set up billing, and create an API key restricted to HTTP referrers (`http://localhost:5173/*`) and only those two APIs. Add a `.env.local` file in the project root:
+
+```env
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+```
+
+Restart `npm run dev` after adding or changing the key. Vite exposes the browser key in the page, so restrict it by referrer and API, and set a billing budget/alerts in Google Cloud. Google Maps Platform requires billing; current free usage caps and rates vary by service, so review [Google's pricing](https://developers.google.com/maps/billing-and-pricing/pricing). OSRM still supplies route lines and ETAs. Search results come from Google Places; station pins in the planner still include the app's bundled reference data and are not live availability information.
+
+In Station finder, use **Find gas stations along this route** to search Google Places near sampled points along the selected route. Each search area returns a limited set of results, so verify station details and status in Google Maps.
 
 ### 5. Build for production
 
@@ -165,7 +175,7 @@ These are reference values, not live price feeds. Users can edit them in the app
 
 SmartRoute AI uses the following external services and datasets:
 
-- [OpenStreetMap](https://www.openstreetmap.org/) — Map tiles and geographic data.
+- [Google Maps Platform](https://developers.google.com/maps/documentation/javascript) — Interactive maps and place search.
 - [OSRM](https://project-osrm.org/) — Road routing and travel-time estimates.
 - [EVizee Cambodia](https://evizee.co/maps/) — Public EV charging station references.
 - [Open Development Cambodia](https://data.opendevelopmentcambodia.net/) — Public datasets.
