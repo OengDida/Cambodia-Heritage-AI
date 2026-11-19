@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { googleMapsKey, loadGoogleMaps } from '../googleMaps'
 
-export default function MapView({ origin, destination, route, onMapClick, rangePoint }) {
+export default function MapView({ origin, destination, route, stations = [], filter, onMapClick, rangePoint }) {
   const host = useRef(null)
   const map = useRef(null)
   const clickRef = useRef(onMapClick)
@@ -27,8 +27,9 @@ export default function MapView({ origin, destination, route, onMapClick, rangeP
       instance = new Map(host.current, {
         center: { lat: 12.15, lng: 104.90 }, zoom: 7,
         mapTypeControl: true, streetViewControl: false, fullscreenControl: true,
-        clickableIcons: true,
+        clickableIcons: false,
         styles: [
+          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
           { featureType: 'transit.station.bus', stylers: [{ visibility: 'off' }] },
         ],
       })
@@ -62,6 +63,17 @@ export default function MapView({ origin, destination, route, onMapClick, rangeP
     }
     addPin(origin, `Origin: ${origin?.name || ''}`, '#20d69a', 'A')
     addPin(destination, `Destination: ${destination?.name || ''}`, '#f7b84b', 'B')
+    const visibleStations = stations.filter(station => filter === 'all' || (filter === 'ev' && station.type !== 'gas_only') || (filter === 'gas' && station.type !== 'ev_only') || (filter === 'hybrid' && station.type === 'hybrid_hub'))
+    visibleStations.forEach(station => {
+      if (!station.svgIconMaskURI) return
+      const iconUrl = `${station.svgIconMaskURI}${station.svgIconMaskURI.endsWith('.svg') ? '' : '.svg'}`
+      markers.push(new maps.Marker({
+        map: instance,
+        position: { lat: station.lat, lng: station.lng },
+        title: `${station.name} · ${station.detail || 'Google Maps place'}`,
+        icon: { url: iconUrl, scaledSize: new maps.Size(34, 34), anchor: new maps.Point(17, 34) },
+      }))
+    })
     addPin(rangePoint, 'Estimated range limit', '#ff647c', '!')
     if (route?.length > 1) line = new maps.Polyline({
       map: instance,
@@ -76,7 +88,7 @@ export default function MapView({ origin, destination, route, onMapClick, rangeP
       instance.fitBounds(bounds, { left: 430, right: 320, top: 90, bottom: 80 })
     } else if (points.length === 1) instance.panTo({ lat: points[0].lat, lng: points[0].lng })
     return () => { markers.forEach(marker => marker.setMap(null)); line?.setMap(null) }
-  }, [origin, destination, route, rangePoint, status])
+  }, [origin, destination, route, stations, filter, rangePoint, status])
 
   return <div className="google-map relative h-full w-full">
     <div ref={host} className="h-full w-full" />
