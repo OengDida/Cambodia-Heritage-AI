@@ -21,3 +21,4 @@ button{cursor:pointer}
 .custom-pin{background:transparent;border:0}
 input[type=range]{height:5px;cursor:pointer}
 @media(max-width:640px){.field{font-size:16px}.leaflet-control-zoom{display:none}.leaflet-control-attribution{max-width:65vw}}
+.pick-mode .leaflet-container,.pick-mode .leaflet-grab,.pick-mode .leaflet-interactive{cursor:crosshair!important}
