@@ -126,7 +126,7 @@ const CATEGORY_TYPES = {
   hybrid: [GAS_TYPE, EV_TYPE],
 }
 const HUB_RADIUS_KM = 0.3
-const ROUTE_CORRIDOR_KM = 2.5
+const ROUTE_CORRIDOR_KM = 0.5
 
 const kmBetween = (a, b) => distanceKm([a.lng, a.lat], [b.lng, b.lat])
 
