@@ -1,62 +1,238 @@
 # SmartRoute AI — Cambodia Trip Planner
 
-A frontend-only React + Vite application for inter-provincial route planning, vehicle range estimation, refuelling / charging discovery and trip-cost comparison in Cambodia.
+**Plan smarter inter-provincial journeys across Cambodia.**
 
-## Run locally
+SmartRoute AI is a browser-based trip-planning application that combines road-route estimates, vehicle range calculations, fuel and EV charging station discovery, and trip-cost comparisons in Cambodian riel (KHR) and US dollars (USD).
 
-```bash
+- **Live Demo:** https://smartroute-dev.vercel.app
+- **GitHub:** https://github.com/OengDida/SmartRoute-AI
+
+> **Important:** The AI Co-Pilot currently uses rule-based recommendations. This application is a planning aid, not a live navigation service. Always verify routes, station details, and prices before travelling.
+
+## ✨ Features
+
+### 🗺️ Route Planning
+- Select origin and destination from supported Cambodian provinces and cities.
+- Use current browser location to set your starting point.
+- Click directly on the map to place custom origin and destination pins.
+- Calculate estimated driving distance and travel time using OSRM.
+- Fallback to approximate distance calculations when routing services are unavailable.
+
+### 🚗 Vehicle Profiles & Range Estimation
+- Support five vehicle categories:
+  - Electric Vehicles (EV)
+  - Hybrid Vehicles
+  - Gasoline Vehicles
+  - Diesel Vehicles
+  - Motorbikes
+- Choose from predefined vehicle profiles.
+- Configure custom or modified vehicles.
+- Set fuel or battery capacity and current energy level.
+- Calculate estimated remaining driving range.
+- Receive warnings when the destination exceeds estimated vehicle range.
+
+### ⚡ Fuel & Charging Station Finder
+- Discover EV charging stations and fuel stations.
+- Filter stations by:
+  - All Stations
+  - EV Chargers
+  - Gas Pumps
+  - Hybrid Hubs
+- View station information, brands, operating hours, roads, and connectors where available.
+- Identify suggested stops along the selected route.
+- Generate a basic pit-stop itinerary.
+
+### 💰 Trip Cost Calculator
+- Estimate fuel or electricity consumption.
+- Calculate estimated total trip expenses.
+- Compare EV charging costs against gasoline costs.
+- Display costs in Cambodian riel (KHR) and US dollars (USD).
+- Customize fuel prices, EV charging tariffs, and exchange rates.
+
+### 🤖 SmartRoute AI Co-Pilot
+- Provides vehicle-range recommendations.
+- Identifies potential range-related risks.
+- Suggests compatible stops along the route.
+- Offers EV versus gasoline cost comparisons.
+- Provides basic eco-driving tips.
+
+## 🛠️ Technology Stack
+
+| Technology | Purpose |
+|---|---|
+| React 18 | Frontend framework |
+| Vite 6 | Development and build tool |
+| Tailwind CSS 3 | Styling |
+| Leaflet | Interactive maps |
+| React Leaflet | React map integration |
+| OpenStreetMap | Map tiles |
+| OSRM | Road routing and travel-time estimates |
+| Lucide React | Icons |
+| JavaScript | Application logic |
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Make sure you have installed:
+
+- Node.js (recommended: current LTS version)
+- npm
+- Git
+
+### 1. Clone the repository
+
+\`\`\`bash
+git clone https://github.com/OengDida/SmartRoute-AI.git
+\`\`\`
+
+### 2. Navigate to the project directory
+
+\`\`\`bash
+cd SmartRoute-AI
+\`\`\`
+
+### 3. Install dependencies
+
+\`\`\`bash
 npm install
+\`\`\`
+
+### 4. Start the development server
+
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
-Open the local URL printed by Vite. Production build:
+Open the local URL displayed in your terminal to access SmartRoute AI.
 
-```bash
+### 5. Build for production
+
+\`\`\`bash
 npm run build
+\`\`\`
+
+### 6. Preview production build
+
+\`\`\`bash
 npm run preview
-```
+\`\`\`
 
-## Stack
+## 📂 Project Structure
 
-- React 18 + Vite
-- Tailwind CSS
-- Leaflet + React Leaflet
-- OpenStreetMap raster tiles
-- OSRM public driving route API
-- Lucide React icons
+\`\`\`text
+SmartRoute-AI/
+│
+├── public/
+│   ├── favicon.svg
+│   └── sitemap.xml
+│
+├── src/
+│   ├── components/
+│   │   └── MapView.jsx
+│   │
+│   ├── data/
+│   │   ├── places.js
+│   │   ├── rates.js
+│   │   └── vehicles.js
+│   │
+│   ├── App.jsx
+│   ├── index.css
+│   ├── main.jsx
+│   └── utils.js
+│
+├── index.html
+├── package.json
+├── tailwind.config.js
+├── vite.config.js
+└── README.md
+\`\`\`
 
-No API keys or backend are required.
+## 📊 Default Reference Rates
 
-## Included features
+The application includes editable reference rates:
 
-- Welcome screen, vehicle configuration and interactive trip planner
-- Stock vehicle presets for EV, hybrid, gasoline, diesel and motorbike
-- Modified vehicle configuration and adjustable current energy level
-- Cambodia province/city endpoints and custom map-click pins
-- OSRM route geometry with straight-line × 1.22 fallback
-- Embedded station dataset and category filters
-- Rule-based range alerts, pit-stop suggestions and itinerary
-- Editable fuel, charging and FX rates
-- KHR and USD trip cost comparison
+| Item | Default Rate |
+|---|---:|
+| Regular Gasoline | 4,350 KHR/L |
+| Diesel | 5,300 KHR/L |
+| EV DC Fast Charging | 1,350 KHR/kWh |
+| USD to KHR | 4,050 KHR/USD |
 
-## Data notes — please read
+These are reference values, not live price feeds. Users can edit them in the application.
 
-- Fuel defaults: 4,350 KHR/L gasoline and 5,300 KHR/L diesel reflect the Ministry of Commerce retail price schedule effective **11–21 November 2026**.
-- EV DC fast-charge default: 1,350 KHR/kWh, the EAC tariff reported effective **1 October 2025** for DC fast charging up to 250 kW.
-- FX default: 4,050 KHR/USD is a configurable estimate, not a live FX feed.
-- Vehicle efficiency, battery range, and fuel tank sizes are planning estimates. Actual consumption varies by trim, model year, load, speed and conditions.
-- Station dataset combines public EV map records (including coordinates/hours/connectors listed by EVizee) and illustrative fuel-hub pins to provide an immediately usable demo map. The app does **not** have live station status or confirm that every named brand location has the listed service. Verify location, operating hours, connector compatibility, pump availability and current pricing with the operator before departure.
-- OSRM is a public community routing service. It may rate-limit or be unavailable. The fallback is not a navigable road route.
+## 🌐 Data Sources & APIs
 
-## Sources
+SmartRoute AI uses the following external services and datasets:
 
-- Ministry of Commerce fuel schedule reported for 11–21 Nov 2026: https://data.opendevelopmentcambodia.net/en/laws_record/notification-no-4001-on-the-retail-price-of-gasoline-at-the-gasoline-station
-- Cambodian EV charging stations dataset: https://data.mef.gov.kh/datasets/pd_67b6d073cb47dc00012464a6
-- EVizee Cambodia public charger map: https://evizee.co/maps/
-- EAC DC fast charging tariff reference: https://cyprusconsulatecambodia.com/electricity-authority-of-cambodia-issues-charging-prices-for-electric-vehicle-charging-stations-in-cambodia/
-- OSM tiles: https://www.openstreetmap.org/
-- OSRM demo routing: https://project-osrm.org/
+- [OpenStreetMap](https://www.openstreetmap.org/) — Map tiles and geographic data.
+- [OSRM](https://project-osrm.org/) — Road routing and travel-time estimates.
+- [EVizee Cambodia](https://evizee.co/maps/) — Public EV charging station references.
+- [Open Development Cambodia](https://data.opendevelopmentcambodia.net/) — Public datasets.
+- [Electricity Authority of Cambodia](https://www.eac.gov.kh/) — Electricity and EV charging tariff references.
 
-## Known limitations
+## ⚠️ Limitations
 
-This is a frontend-only trip planning prototype, not a navigation or emergency-rescue service. It does not provide live traffic, charger occupancy, live fuel prices, guaranteed station services, or turn-by-turn voice guidance. Use current operator information and a dedicated navigation app for the actual drive.
+Please note:
+
+- Station locations and details may not reflect current operating conditions.
+- Fuel and electricity prices are editable reference values, not live prices.
+- Vehicle range calculations are estimates.
+- Traffic conditions and road closures are not incorporated.
+- OSRM availability and response times depend on the public service.
+- The AI Co-Pilot is currently rule-based rather than powered by a generative AI model.
+- The application does not provide turn-by-turn navigation.
+
+Always verify station availability, fuel prices, charging compatibility, and road conditions before travelling.
+
+## 🔮 Future Improvements
+
+Potential future development directions:
+
+- Integration with live traffic information.
+- Real-time EV charging station availability.
+- AI-powered route optimization.
+- More accurate vehicle energy-consumption models.
+- User accounts and saved journeys.
+- Multi-stop route planning.
+- Live fuel-price integration.
+- Mobile application support.
+- Offline map support.
+
+## 🤝 Contributing
+
+Contributions are welcome!
+
+1. Fork this repository.
+2. Create a feature branch:
+
+   \`\`\`bash
+   git checkout -b feature/your-feature
+   \`\`\`
+
+3. Commit your changes:
+
+   \`\`\`bash
+   git commit -m "Add: your feature"
+   \`\`\`
+
+4. Push your branch:
+
+   \`\`\`bash
+   git push origin feature/your-feature
+   \`\`\`
+
+5. Open a Pull Request.
+
+## 📄 License
+
+No license is currently specified in this repository. All rights are reserved by default unless the project owner adds an explicit license.
+
+---
+
+**SmartRoute AI**
+
+*Every kilometre. Smarter.*
+
+Built to make Cambodia's journeys more efficient, affordable, and sustainable.
+
