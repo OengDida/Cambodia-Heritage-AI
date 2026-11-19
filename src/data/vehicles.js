@@ -26,7 +26,30 @@ export const vehicleGroups = [
     ]},
   { id: 'motorbike', label: 'Motorbike', short: 'Motorbike', icon: '🏍️', fuel: 'gasoline',
     items: [
-      { id:'dream', name:'Honda Dream 125', energy:'gasoline', capacity:4, consumption:1.6, unit:'L/100km', note:'1.6 L/100km · 4 L tank' },
-      { id:'pcx', name:'Honda PCX 160', energy:'gasoline', capacity:8.1, consumption:2.1, unit:'L/100km', note:'2.1 L/100km · 8.1 L tank' }
+      { id:'adv150', name:'Honda ADV150 (2021)', energy:'gasoline', capacity:8.0, consumption:2.4, unit:'L/100km', note:'2.4 L/100km · 8.0 L tank' },
+      { id:'adv160', name:'Honda ADV160 (2026)', energy:'gasoline', capacity:8.1, consumption:2.2, unit:'L/100km', note:'2.2 L/100km · 8.1 L tank' },
+      { id:'beat', name:'Honda BeAT (2027)', energy:'gasoline', capacity:4.2, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 4.2 L tank' },
+      { id:'cb150r', name:'Honda CB150R (2024)', energy:'gasoline', capacity:8.5, consumption:2.6, unit:'L/100km', note:'2.6 L/100km · 8.5 L tank' },
+      { id:'cbr150r', name:'Honda CBR150R (2021)', energy:'gasoline', capacity:12.0, consumption:2.4, unit:'L/100km', note:'2.4 L/100km · 12.0 L tank' },
+      { id:'click125', name:'Honda CLICK125 (2027)', energy:'gasoline', capacity:5.5, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 5.5 L tank' },
+      { id:'click125i', name:'Honda CLICK125i (2021)', energy:'gasoline', capacity:5.5, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 5.5 L tank' },
+      { id:'click150i', name:'Honda CLICK150i (2021)', energy:'gasoline', capacity:5.5, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 5.5 L tank' },
+      { id:'click160', name:'Honda CLICK160 (2027)', energy:'gasoline', capacity:5.5, consumption:2.1, unit:'L/100km', note:'2.1 L/100km · 5.5 L tank' },
+      { id:'dream', name:'Honda Dream (2027)', energy:'gasoline', capacity:4.0, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 4.0 L tank' },
+      { id:'dream125', name:'Honda Dream 125 (2020)', energy:'gasoline', capacity:4.0, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 4.0 L tank' },
+      { id:'giorno', name:'Honda Giorno+ (2026)', energy:'gasoline', capacity:5.4, consumption:2.0, unit:'L/100km', note:'2.0 L/100km · 5.4 L tank' },
+      { id:'icone', name:'Honda ICON e: (2026)', energy:'electric', capacity:1.47, consumption:2.8, unit:'kWh/100km', note:'2.8 kWh/100km · 1.47 kWh battery' },
+      { id:'msxgrom', name:'Honda MSX Grom (2024)', energy:'gasoline', capacity:6.0, consumption:1.5, unit:'L/100km', note:'1.5 L/100km · 6.0 L tank' },
+      { id:'msx125sf', name:'Honda MSX125SF (2018)', energy:'gasoline', capacity:5.7, consumption:2.0, unit:'L/100km', note:'2.0 L/100km · 5.7 L tank' },
+      { id:'pcx', name:'Honda PCX (2025)', energy:'gasoline', capacity:8.1, consumption:2.2, unit:'L/100km', note:'2.2 L/100km · 8.1 L tank' },
+      { id:'pcx125', name:'Honda PCX125 (2026)', energy:'gasoline', capacity:8.1, consumption:2.0, unit:'L/100km', note:'2.0 L/100km · 8.1 L tank' },
+      { id:'pcx150', name:'Honda PCX150 (2020)', energy:'gasoline', capacity:8.0, consumption:2.4, unit:'L/100km', note:'2.4 L/100km · 8.0 L tank' },
+      { id:'pcx160', name:'Honda PCX160 (2027)', energy:'gasoline', capacity:8.1, consumption:2.2, unit:'L/100km', note:'2.2 L/100km · 8.1 L tank' },
+      { id:'scoopy', name:'Honda Scoopy (2026)', energy:'gasoline', capacity:4.2, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 4.2 L tank' },
+      { id:'scoopyi', name:'Honda Scoopy i (2020)', energy:'gasoline', capacity:4.0, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 4.0 L tank' },
+      { id:'wave100', name:'Honda Wave 100 (2019)', energy:'gasoline', capacity:3.7, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 3.7 L tank' },
+      { id:'wave110', name:'Honda Wave 110 (2025)', energy:'gasoline', capacity:3.7, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 3.7 L tank' },
+      { id:'winnerr', name:'Honda Winner R (2026)', energy:'gasoline', capacity:4.5, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 4.5 L tank' },
+      { id:'zoomerx', name:'Honda Zoomer-X (2020)', energy:'gasoline', capacity:4.0, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 4.0 L tank' }
     ]}
 ]
