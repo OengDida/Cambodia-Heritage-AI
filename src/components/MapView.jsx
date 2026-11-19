@@ -64,16 +64,12 @@ export default function MapView({ origin, destination, route, stations = [], fil
     addPin(origin, `Origin: ${origin?.name || ''}`, '#20d69a', 'A')
     addPin(destination, `Destination: ${destination?.name || ''}`, '#f7b84b', 'B')
     const visibleStations = stations.filter(station => filter === 'all' || (filter === 'ev' && station.type !== 'gas_only') || (filter === 'gas' && station.type !== 'ev_only') || (filter === 'hybrid' && station.type === 'hybrid_hub'))
-    visibleStations.forEach(station => {
-      if (!station.svgIconMaskURI) return
-      const iconUrl = `${station.svgIconMaskURI}${station.svgIconMaskURI.endsWith('.svg') ? '' : '.svg'}`
-      markers.push(new maps.Marker({
-        map: instance,
-        position: { lat: station.lat, lng: station.lng },
-        title: `${station.name} · ${station.detail || 'Google Maps place'}`,
-        icon: { url: iconUrl, scaledSize: new maps.Size(34, 34), anchor: new maps.Point(17, 34) },
-      }))
-    })
+    visibleStations.forEach(station => addPin(
+      station,
+      `${station.name} · ${station.detail || 'Google Maps place'}`,
+      station.type === 'ev_only' ? '#53b7ff' : station.type === 'gas_only' ? '#f7b84b' : '#b69cff',
+      station.type === 'ev_only' ? '⚡' : station.type === 'gas_only' ? '⛽' : '•',
+    ))
     addPin(rangePoint, 'Estimated range limit', '#ff647c', '!')
     if (route?.length > 1) line = new maps.Polyline({
       map: instance,
