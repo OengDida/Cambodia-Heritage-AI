@@ -5,13 +5,34 @@ export function loadGoogleMaps() {
   if (!googleMapsKey) return Promise.reject(new Error('Google Maps API key is not configured'))
   if (window.google?.maps?.importLibrary) return Promise.resolve(window.google.maps)
   if (!googleMapsPromise) googleMapsPromise = new Promise((resolve, reject) => {
+    const callbackName = `__smartRouteGoogleMapsCallback_${Date.now()}`
+    let settled = false
+    const cleanup = () => {
+      delete window[callbackName]
+    }
+    const complete = () => {
+      if (settled) return
+      if (window.google?.maps?.importLibrary) {
+        settled = true
+        cleanup()
+        resolve(window.google.maps)
+      } else {
+        settled = true
+        cleanup()
+        reject(new Error('Google Maps did not initialize'))
+      }
+    }
+    window[callbackName] = complete
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(googleMapsKey)}&loading=async&v=weekly`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(googleMapsKey)}&loading=async&callback=${callbackName}&v=weekly`
     script.async = true
-    script.onerror = () => reject(new Error('Google Maps could not be loaded'))
-    script.onload = () => window.google?.maps?.importLibrary
-      ? resolve(window.google.maps)
-      : reject(new Error('Google Maps did not initialize'))
+    script.onerror = () => {
+      if (settled) return
+      settled = true
+      cleanup()
+      reject(new Error('Google Maps could not be loaded'))
+    }
+    script.onload = () => queueMicrotask(complete)
     document.head.appendChild(script)
   })
   return googleMapsPromise
