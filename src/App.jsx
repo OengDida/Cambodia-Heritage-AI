@@ -117,7 +117,7 @@ function TripPlanner({config,onChangeVehicle}) {
   const [rates,setRates]=useState(defaultRates)
   const [showRates,setShowRates]=useState(false)
   const [prompt,setPrompt]=useState('')
-  const [mapClickMode,setMapClickMode]=useState('origin')
+  const [mapClickMode,setMapClickMode]=useState(null)
   const [routeError,setRouteError]=useState(false)
   const [showStations,setShowStations]=useState(false)
   const [locating,setLocating]=useState(false)
@@ -165,12 +165,22 @@ function TripPlanner({config,onChangeVehicle}) {
   useEffect(()=>{calculate(origin,destination)},[])
   const pickOrigin=pl=>{setOriginName(pl.name);setOrigin(pl);calculate(pl,destination)}
   const pickDestination=pl=>{setDestinationName(pl.name);setDestination(pl);calculate(origin,pl)}
+  const isMobile=()=>window.matchMedia('(max-width:1023px)').matches
+  const togglePin=which=>{
+    if(mapClickMode===which){setMapClickMode(null);if(isMobile())setShowLeft(true);return}
+    setMapClickMode(which)
+    if(isMobile())setShowLeft(false)
+  }
   const handleMapClick=p=>{
+    if(!mapClickMode)return
     const nearest=provinces.map(x=>({...x,d:kmLine(x,p)})).sort((a,b)=>a.d-b.d)[0]
     const pin={lat:p.lat,lng:p.lng,name:`Map pin near ${nearest.name}`}
-    if(mapClickMode==='origin'){setOrigin(pin);setOriginName('Custom map pin');calculate(pin,destination);setMapClickMode('destination')}
-    else {setDestination(pin);setDestinationName('Custom map pin');calculate(origin,pin)}
+    if(mapClickMode==='origin'){setOrigin(pin);setOriginName('Custom map pin');calculate(pin,destination)}
+    else{setDestination(pin);setDestinationName('Custom map pin');calculate(origin,pin)}
+    setMapClickMode(null)
+    if(isMobile())setShowLeft(true)
   }
+  const pinButton=which=><button onClick={()=>togglePin(which)} className={cx('mt-2 flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-bold transition',mapClickMode===which?'border-emeraldx bg-emeraldx text-ink':'border-white/10 bg-white/5 text-slate-200 hover:border-emeraldx/40 hover:text-emeraldx')}><MapPin size={15}/>{mapClickMode===which?'Tap the map to drop pin · Cancel':'Pin (choose on map)'}</button>
   const useCurrentLocation=()=>{
     if(!('geolocation' in navigator)){setLocNote('Location is not supported by this browser.');return}
     setLocating(true);setLocNote('')
@@ -180,7 +190,7 @@ function TripPlanner({config,onChangeVehicle}) {
         const nearest=provinces.map(x=>({...x,d:kmLine(x,{lat,lng})})).sort((a,b)=>a.d-b.d)[0]
         const inCambodia=lat>=9.9&&lat<=14.8&&lng>=102.2&&lng<=107.8
         const pin={lat,lng,name:`Current location (near ${nearest.name})`}
-        setOrigin(pin);setOriginName('Current location');setMapClickMode('destination')
+        setOrigin(pin);setOriginName('Current location');setMapClickMode(null)
         setLocNote(inCambodia?`Origin set to your location, near ${nearest.name}.`:'Your location appears to be outside Cambodia. Routes and stations may not be useful.')
         setLocating(false)
         calculate(pin,destination)
@@ -206,9 +216,9 @@ function TripPlanner({config,onChangeVehicle}) {
         <Panel className="p-4"><div className="text-xs font-extrabold">Route overview</div><div className="mt-3 flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-emeraldx"/><div className="text-xs font-semibold">{origin?origin.name:'Choose origin'}</div></div><div className="ml-1 my-1 h-5 border-l border-dashed border-slate-600"/><div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-amberx"/><div className="text-xs font-semibold">{destination?destination.name:'Choose destination'}</div></div><div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3"><div><div className="text-[10px] text-slate-500">Distance</div><b>{fmt(distance)} km</b></div><div><div className="text-[10px] text-slate-500">ETA</div><b>{fmtTime(duration)}</b></div></div></Panel>
         <Panel className="p-4"><div className="mb-3 flex items-center gap-2 text-xs font-extrabold"><Activity size={15} className="text-emeraldx"/> Range & dead-zone monitor</div><div className="flex items-end justify-between"><span className="text-[10px] text-slate-500">Estimated remaining range</span><b className={lowRange?'text-rose-300':'text-emeraldx'}>{fmt(currentRange)} km</b></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className={cx('h-full rounded-full',lowRange?'bg-rose-400':'bg-emeraldx')} style={{width:`${Math.min(100,distance/currentRange*100)}%`}}/></div><div className="mt-2 text-[10px] leading-4 text-slate-400">{!origin||!destination?'Choose an origin and destination to check range.':lowRange?'Range limit falls before destination.':'Estimated range covers the route.'}</div></Panel>
         <Panel className="p-4"><div className="mb-3 text-xs font-extrabold">Pit-stop itinerary</div><div className="space-y-3"><div className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-emeraldx"/><div><b className="text-xs">{origin?origin.name:'Choose origin'}</b><div className="text-[10px] text-slate-500">Start journey</div></div></div>{recommended.map(s=><div key={s.id} className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-300"/><div><b className="text-xs">{s.name}</b><div className="text-[10px] text-slate-500">Approx. route progress · {s.road}</div></div></div>)}{lowRange&&!recommended.length&&<div className="rounded-lg bg-rose-400/10 p-2 text-[10px] text-rose-200">No compatible stop confidently identified. Plan an alternate stop.</div>}<div className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-amberx"/><div><b className="text-xs">{destination?destination.name:'Choose destination'}</b><div className="text-[10px] text-slate-500">Destination</div></div></div></div></Panel>
-        <div className="rounded-xl border border-white/10 bg-ink/85 p-3 text-[10px] leading-4 text-slate-400 backdrop-blur"><Info size={13} className="mb-1 text-amberx"/> Route and travel time from OSRM are estimates. Map click mode: <b className="text-emeraldx">{mapClickMode}</b>. Tap the map to place a custom pin.</div></>
+        <div className="rounded-xl border border-white/10 bg-ink/85 p-3 text-[10px] leading-4 text-slate-400 backdrop-blur"><Info size={13} className="mb-1 text-amberx"/> Route and travel time from OSRM are estimates. Use “Pin (choose on map)” under origin or destination to place a custom pin.</div></>
   return <div className="relative h-[100dvh] min-h-[480px] w-full overflow-hidden bg-slate-950 text-white lg:min-h-[720px]">
-    <div className="absolute inset-0"><MapView origin={origin} destination={destination} route={routePoints} stations={stations} filter={filter} onMapClick={handleMapClick} rangePoint={rangePoint}/></div>
+    <div className={cx('absolute inset-0',mapClickMode&&'pick-mode')}><MapView origin={origin} destination={destination} route={routePoints} stations={stations} filter={filter} onMapClick={handleMapClick} rangePoint={rangePoint}/></div>
     <div className="pointer-events-none absolute inset-0 z-[400] bg-gradient-to-r from-ink/35 via-transparent to-transparent"/>
     <div className="pointer-events-none absolute left-1 top-4 z-[500] flex items-center gap-2"><button onClick={onChangeVehicle} aria-label="Back to vehicle profile" className="pointer-events-auto flex h-[52px] items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 text-xs font-bold shadow-xl backdrop-blur transition hover:border-emeraldx/50 hover:text-emeraldx"><ArrowLeft size={16}/> Back</button><div className="flex items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 py-2 shadow-xl backdrop-blur"><img src="/favicon.svg" alt="SmartRoute AI logo" className="h-8 w-8 object-contain"/><div className="hidden sm:block"><div className="text-sm font-black">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[9px] uppercase tracking-widest text-slate-500">Cambodia trip planner</div></div></div></div>
     <div className="pointer-events-none absolute right-1 top-4 z-[500] flex gap-2 lg:hidden"><button onClick={()=>setShowLeft(x=>!x)} aria-label={showLeft?'Hide menu and show map':'Show menu'} className="pointer-events-auto flex h-[52px] items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 text-xs font-bold shadow-xl backdrop-blur hover:border-emeraldx/50">{showLeft?<><MapIcon size={16}/> Map</>:<><Route size={16}/> Plan</>}</button></div>
@@ -218,9 +228,10 @@ function TripPlanner({config,onChangeVehicle}) {
           <div className="mb-3 flex items-center justify-between"><div className="text-sm font-extrabold">Plan your journey</div><span className="rounded-full bg-emeraldx/10 px-2 py-1 text-[9px] font-bold uppercase text-emeraldx">Step 03 / Route</span></div>
           <PlaceSearch label="Origin" value={originName} placeholder="Search a place in Cambodia" onPick={pickOrigin}/>
           <button onClick={useCurrentLocation} disabled={locating} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emeraldx/30 bg-emeraldx/5 py-2.5 text-xs font-bold text-emeraldx transition hover:bg-emeraldx/10 disabled:opacity-60"><LocateFixed size={15} className={locating?'animate-pulse':''}/>{locating?'Locating…':'Use current location'}</button>
+          {pinButton('origin')}
           {locNote&&<div className="mt-2 text-[10px] leading-4 text-slate-400">{locNote}</div>}
-          <div className="my-2 flex items-center justify-between"><span className="text-[10px] text-slate-500">Tap map to set a pin</span><button onClick={()=>setMapClickMode(x=>x==='origin'?'destination':'origin')} className="text-[10px] font-bold text-emeraldx">Pin next: {mapClickMode}</button></div>
-          <PlaceSearch label="Destination" value={destinationName} placeholder="Search a place in Cambodia" onPick={pickDestination}/>
+          
+          <div className="mt-4"><PlaceSearch label="Destination" value={destinationName} placeholder="Search a place in Cambodia" onPick={pickDestination}/>{pinButton('destination')}</div>
           <div className="mt-3 flex items-center justify-between rounded-xl bg-black/20 p-3"><div><div className="text-[10px] uppercase text-slate-500">Vehicle</div><div className="mt-1 text-xs font-bold">{vehicleName}</div></div><div className="text-right"><div className="text-[10px] uppercase text-slate-500">Current level</div><div className="mt-1 text-sm font-black text-emeraldx">{config.level}%</div></div></div>
           <button onClick={()=>calculate()} disabled={!origin||!destination} className="disabled:opacity-40 mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emeraldx py-3 text-xs font-extrabold text-ink hover:bg-emerald-300"><Navigation size={15}/> Recalculate route</button>
           <div className="mt-2 text-center text-[10px] text-slate-500">{routeStatus}</div>
@@ -252,6 +263,7 @@ function TripPlanner({config,onChangeVehicle}) {
     </div>
     <button onClick={()=>setShowLeft(x=>!x)} aria-label={showLeft?'Hide left menu':'Show left menu'} title={showLeft?'Hide menu':'Show menu'} style={{left:showLeft?'min(404px, calc(100vw - 44px))':'4px'}} className="absolute top-[84px] z-[600] hidden h-10 w-8 items-center justify-center rounded-xl border border-white/10 bg-ink/90 text-slate-300 shadow-xl backdrop-blur transition-all hover:border-emeraldx/50 hover:text-emeraldx lg:flex">{showLeft?<ChevronLeft size={18}/>:<ChevronRight size={18}/>}</button>
     <button onClick={()=>setShowRight(x=>!x)} aria-label={showRight?'Hide right menu':'Show right menu'} title={showRight?'Hide menu':'Show menu'} style={{right:showRight?'304px':'4px'}} className="absolute top-[84px] z-[600] hidden h-10 w-8 items-center justify-center rounded-xl border border-white/10 bg-ink/90 text-slate-300 shadow-xl backdrop-blur transition-all hover:border-emeraldx/50 hover:text-emeraldx lg:flex">{showRight?<ChevronRight size={18}/>:<ChevronLeft size={18}/>}</button>
+    {mapClickMode&&<div className="absolute left-1/2 top-[76px] z-[600] flex -translate-x-1/2 items-center gap-3 whitespace-nowrap rounded-xl border border-emeraldx/40 bg-ink/95 px-4 py-2.5 text-xs font-bold shadow-xl backdrop-blur"><MapPin size={15} className="text-emeraldx"/>Tap the map to set {mapClickMode}<button onClick={()=>togglePin(mapClickMode)} className="text-slate-400 hover:text-white">Cancel</button></div>}
     {routeError&&<div className="absolute left-2 right-2 top-[76px] z-[600] max-w-xs lg:left-auto lg:bottom-4 lg:right-4 lg:top-auto rounded-xl border border-amberx/30 bg-ink/95 p-3 text-[10px] text-amberx shadow-xl">OSRM could not be reached. Showing a straight-line distance estimate with a road-distance factor.</div>}
   </div>
 }
