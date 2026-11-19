@@ -14,7 +14,7 @@ function Panel({children,className=''}){return <div className={cx('glass rounded
 function Pill({children,active,onClick}){return <button onClick={onClick} className={cx('rounded-full px-3 py-2 text-xs font-semibold transition',active?'bg-emeraldx text-ink':'bg-white/5 text-slate-300 hover:bg-white/10')}>{children}</button>}
 function Field({label,children}){return <label className="block space-y-2"><span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>{children}</label>}
 function Select({value,onChange,children}){return <div className="relative"><select value={value} onChange={e=>onChange(e.target.value)} className="field w-full appearance-none pr-9">{children}</select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-slate-400"/></div>}
-function PlaceSearch({label,value,placeholder,onPick}){
+function PlaceSearch({label,value,placeholder,onPick,action}){
   const [q,setQ]=useState('')
   const [open,setOpen]=useState(false)
   const [found,setFound]=useState([])
@@ -37,7 +37,7 @@ function PlaceSearch({label,value,placeholder,onPick}){
   const item='block w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-white/5'
   return <div className="block space-y-2">
     <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>
-    <div className="relative"><Search size={15} className="pointer-events-none absolute left-3 top-3.5 text-slate-400"/><input className="field w-full !pl-9" value={open?q:value} placeholder={open&&value?value:placeholder} onFocus={()=>{setOpen(true);setQ('')}} onBlur={()=>setOpen(false)} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();search()}else if(e.key==='Escape')e.target.blur()}} autoComplete="off"/></div>
+    <div className="flex gap-2"><div className="relative min-w-0 flex-1"><Search size={15} className="pointer-events-none absolute left-3 top-3.5 text-slate-400"/><input className="field w-full !pl-9" value={open?q:value} placeholder={open&&value?value:placeholder} onFocus={()=>{setOpen(true);setQ('')}} onBlur={()=>setOpen(false)} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();search()}else if(e.key==='Escape')e.target.blur()}} autoComplete="off"/></div>{action}</div>
     {open&&<div onMouseDown={e=>e.preventDefault()} className="max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-black/30 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {term.length>=2&&!showFound&&<button onClick={search} disabled={status==='loading'} className={cx(item,'font-bold text-emeraldx')}>{status==='loading'?'Searching…':`Search all places for “${term}”`}</button>}
       {showFound&&found.length>0&&<div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Places in Cambodia</div>}
@@ -180,7 +180,7 @@ function TripPlanner({config,onChangeVehicle}) {
     setMapClickMode(null)
     if(isMobile())setShowLeft(true)
   }
-  const pinButton=which=><button onClick={()=>togglePin(which)} className={cx('mt-2 flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-bold transition',mapClickMode===which?'border-emeraldx bg-emeraldx text-ink':'border-white/10 bg-white/5 text-slate-200 hover:border-emeraldx/40 hover:text-emeraldx')}><MapPin size={15}/>{mapClickMode===which?'Tap the map to drop pin · Cancel':'Pin (choose on map)'}</button>
+  const pinButton=which=><button onClick={()=>togglePin(which)} aria-label={mapClickMode===which?'Cancel pin on map':'Pin (choose on map)'} title="Pin (choose on map)" className={cx('flex w-11 shrink-0 items-center justify-center rounded-[10px] border transition',mapClickMode===which?'border-emeraldx bg-emeraldx text-ink':'border-white/10 bg-white/5 text-slate-300 hover:border-emeraldx/50 hover:text-emeraldx')}><MapPin size={18}/></button>
   const useCurrentLocation=()=>{
     if(!('geolocation' in navigator)){setLocNote('Location is not supported by this browser.');return}
     setLocating(true);setLocNote('')
@@ -226,12 +226,11 @@ function TripPlanner({config,onChangeVehicle}) {
       <div className={cx('pointer-events-auto max-h-full w-full overflow-y-auto lg:max-w-[390px] [direction:rtl] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',!showLeft&&'hidden')}><div className="flex flex-col gap-3 [direction:ltr]">
         <Panel className="p-4">
           <div className="mb-3 flex items-center justify-between"><div className="text-sm font-extrabold">Plan your journey</div><span className="rounded-full bg-emeraldx/10 px-2 py-1 text-[9px] font-bold uppercase text-emeraldx">Step 03 / Route</span></div>
-          <PlaceSearch label="Origin" value={originName} placeholder="Search a place in Cambodia" onPick={pickOrigin}/>
+          <PlaceSearch label="Origin" value={originName} placeholder="Search a place in Cambodia" onPick={pickOrigin} action={pinButton('origin')}/>
           <button onClick={useCurrentLocation} disabled={locating} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emeraldx/30 bg-emeraldx/5 py-2.5 text-xs font-bold text-emeraldx transition hover:bg-emeraldx/10 disabled:opacity-60"><LocateFixed size={15} className={locating?'animate-pulse':''}/>{locating?'Locating…':'Use current location'}</button>
-          {pinButton('origin')}
           {locNote&&<div className="mt-2 text-[10px] leading-4 text-slate-400">{locNote}</div>}
           
-          <div className="mt-4"><PlaceSearch label="Destination" value={destinationName} placeholder="Search a place in Cambodia" onPick={pickDestination}/>{pinButton('destination')}</div>
+          <div className="mt-4"><PlaceSearch label="Destination" value={destinationName} placeholder="Search a place in Cambodia" onPick={pickDestination} action={pinButton('destination')}/></div>
           <div className="mt-3 flex items-center justify-between rounded-xl bg-black/20 p-3"><div><div className="text-[10px] uppercase text-slate-500">Vehicle</div><div className="mt-1 text-xs font-bold">{vehicleName}</div></div><div className="text-right"><div className="text-[10px] uppercase text-slate-500">Current level</div><div className="mt-1 text-sm font-black text-emeraldx">{config.level}%</div></div></div>
           <button onClick={()=>calculate()} disabled={!origin||!destination} className="disabled:opacity-40 mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emeraldx py-3 text-xs font-extrabold text-ink hover:bg-emerald-300"><Navigation size={15}/> Recalculate route</button>
           <div className="mt-2 text-center text-[10px] text-slate-500">{routeStatus}</div>
