@@ -162,7 +162,7 @@ export async function searchStationsAlongRoute(routeCoordinates, category = 'all
         includedTypes,
         locationRestriction: { center: { lat, lng }, radius: 10000 },
         rankPreference: 'DISTANCE', maxResultCount: 20,
-        fields: ['id', 'displayName', 'location', 'formattedAddress', 'businessStatus', 'googleMapsURI', 'types', 'primaryType'],
+        fields: ['id', 'displayName', 'location', 'formattedAddress', 'businessStatus', 'googleMapsURI', 'types', 'primaryType', 'svgIconMaskURI'],
         language: 'en', region: 'kh',
       })
       return places
@@ -180,6 +180,7 @@ export async function searchStationsAlongRoute(routeCoordinates, category = 'all
         found.set(place.id, {
           id: place.id, name: place.displayName || (type === 'ev_only' ? 'EV charger' : 'Station'),
           detail: place.formattedAddress || '', status: place.businessStatus || '',
+          svgIconMaskURI: place.svgIconMaskURI || '',
           mapsUrl: place.googleMapsURI || `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
           lat, lng, type, brand: '', road: '', hours: 'Check Google Maps', connectors: [],
         })
