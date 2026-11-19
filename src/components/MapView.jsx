@@ -60,7 +60,7 @@ export default function MapView({ origin, destination, route, stations, filter, 
     addPin(origin, `Origin: ${origin?.name || ''}`, '#20d69a', 'A')
     addPin(destination, `Destination: ${destination?.name || ''}`, '#f7b84b', 'B')
     const visible = stations.filter(s => filter === 'all' || (filter === 'ev' && s.type !== 'gas_only') || (filter === 'gas' && s.type !== 'ev_only') || (filter === 'hybrid' && s.type === 'hybrid_hub'))
-    visible.forEach(s => addPin(s, `${s.name} · ${s.brand} · ${s.road} · Verify current availability`, s.type === 'ev_only' ? '#53b7ff' : s.type === 'gas_only' ? '#f7b84b' : '#b69cff', s.type === 'ev_only' ? '⚡' : '•'))
+    visible.forEach(s => addPin(s, `${s.name} · ${s.brand} · ${s.road} · Verify current availability`, s.type === 'ev_only' ? '#53b7ff' : s.type === 'gas_only' ? '#f7b84b' : '#b69cff', s.type === 'ev_only' ? '⚡' : s.type === 'gas_only' ? '⛽' : '•'))
     addPin(rangePoint, 'Estimated range limit', '#ff647c', '!')
     if (route?.length > 1) line = new maps.Polyline({
       map: instance,
