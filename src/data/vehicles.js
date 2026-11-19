@@ -105,6 +105,7 @@ export const vehicleGroups = [
     ]},
   { id: 'motorbike', label: 'Motorbike', short: 'Motorbike', icon: '🏍️', fuel: 'gasoline',
     items: [
+      // Existing Honda entries
       { id:'adv150', name:'Honda ADV150 (2021)', energy:'gasoline', capacity:8.0, consumption:2.4, unit:'L/100km', note:'2.4 L/100km · 8.0 L tank' },
       { id:'adv160', name:'Honda ADV160 (2026)', energy:'gasoline', capacity:8.1, consumption:2.2, unit:'L/100km', note:'2.2 L/100km · 8.1 L tank' },
       { id:'beat', name:'Honda BeAT (2027)', energy:'gasoline', capacity:4.2, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 4.2 L tank' },
@@ -129,6 +130,80 @@ export const vehicleGroups = [
       { id:'wave100', name:'Honda Wave 100 (2019)', energy:'gasoline', capacity:3.7, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 3.7 L tank' },
       { id:'wave110', name:'Honda Wave 110 (2025)', energy:'gasoline', capacity:3.7, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 3.7 L tank' },
       { id:'winnerr', name:'Honda Winner R (2026)', energy:'gasoline', capacity:4.5, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 4.5 L tank' },
-      { id:'zoomerx', name:'Honda Zoomer-X (2020)', energy:'gasoline', capacity:4.0, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 4.0 L tank' }
+      { id:'zoomerx', name:'Honda Zoomer-X (2020)', energy:'gasoline', capacity:4.0, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 4.0 L tank' },
+
+      // Additional Honda models popular in Cambodia
+      { id:'wavealpha', name:'Honda Wave Alpha (2024)', energy:'gasoline', capacity:3.7, consumption:1.8, unit:'L/100km', note:'1.8 L/100km · 3.7 L tank' },
+      { id:'wave125i', name:'Honda Wave 125i (2025)', energy:'gasoline', capacity:5.4, consumption:1.6, unit:'L/100km', note:'1.6 L/100km · 5.4 L tank' },
+      { id:'supercubc125', name:'Honda Super Cub C125 (2025)', energy:'gasoline', capacity:3.7, consumption:1.5, unit:'L/100km', note:'1.5 L/100km · 3.7 L tank' },
+      { id:'ct125', name:'Honda CT125 Hunter Cub (2025)', energy:'gasoline', capacity:5.3, consumption:1.6, unit:'L/100km', note:'1.6 L/100km · 5.3 L tank' },
+      { id:'dax125', name:'Honda Dax 125 (2025)', energy:'gasoline', capacity:3.8, consumption:1.5, unit:'L/100km', note:'1.5 L/100km · 3.8 L tank' },
+      { id:'monkey125', name:'Honda Monkey 125 (2024)', energy:'gasoline', capacity:5.6, consumption:1.5, unit:'L/100km', note:'1.5 L/100km · 5.6 L tank' },
+      { id:'lead125', name:'Honda LEAD 125 (2025)', energy:'gasoline', capacity:6.0, consumption:2.0, unit:'L/100km', note:'2.0 L/100km · 6.0 L tank' },
+      { id:'vario125', name:'Honda Vario 125 (2024)', energy:'gasoline', capacity:5.5, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 5.5 L tank' },
+      { id:'vario160', name:'Honda Vario 160 (2025)', energy:'gasoline', capacity:5.5, consumption:2.1, unit:'L/100km', note:'2.1 L/100km · 5.5 L tank' },
+      { id:'stylo160', name:'Honda Stylo 160 (2025)', energy:'gasoline', capacity:5.0, consumption:2.2, unit:'L/100km', note:'2.2 L/100km · 5.0 L tank' },
+      { id:'forza350', name:'Honda Forza 350 (2025)', energy:'gasoline', capacity:11.7, consumption:3.3, unit:'L/100km', note:'3.3 L/100km · 11.7 L tank' },
+      { id:'adv350', name:'Honda ADV350 (2025)', energy:'gasoline', capacity:11.7, consumption:3.4, unit:'L/100km', note:'3.4 L/100km · 11.7 L tank' },
+      { id:'winnerx', name:'Honda Winner X (2024)', energy:'gasoline', capacity:4.5, consumption:2.0, unit:'L/100km', note:'2.0 L/100km · 4.5 L tank' },
+      { id:'crf250l', name:'Honda CRF250L (2020)', energy:'gasoline', capacity:7.8, consumption:3.0, unit:'L/100km', note:'3.0 L/100km · 7.8 L tank' },
+      { id:'crf300l', name:'Honda CRF300L (2025)', energy:'gasoline', capacity:7.8, consumption:3.1, unit:'L/100km', note:'3.1 L/100km · 7.8 L tank' },
+      { id:'crf300rally', name:'Honda CRF300 Rally (2025)', energy:'gasoline', capacity:12.8, consumption:3.1, unit:'L/100km', note:'3.1 L/100km · 12.8 L tank' },
+      { id:'xr150l', name:'Honda XR150L (2024)', energy:'gasoline', capacity:12.0, consumption:2.5, unit:'L/100km', note:'2.5 L/100km · 12.0 L tank' },
+      { id:'rebel300', name:'Honda Rebel 300 (2024)', energy:'gasoline', capacity:11.2, consumption:3.2, unit:'L/100km', note:'3.2 L/100km · 11.2 L tank' },
+      { id:'rebel500', name:'Honda Rebel 500 (2025)', energy:'gasoline', capacity:11.2, consumption:3.7, unit:'L/100km', note:'3.7 L/100km · 11.2 L tank' },
+      { id:'cb400x', name:'Honda CB400X (2022)', energy:'gasoline', capacity:17.7, consumption:3.5, unit:'L/100km', note:'3.5 L/100km · 17.7 L tank' },
+      { id:'nx500', name:'Honda NX500 (2025)', energy:'gasoline', capacity:17.7, consumption:3.6, unit:'L/100km', note:'3.6 L/100km · 17.7 L tank' },
+
+      // Yamaha
+      { id:'yamahapg1', name:'Yamaha PG-1 (2026)', energy:'gasoline', capacity:5.1, consumption:1.8, unit:'L/100km', note:'1.8 L/100km · 5.1 L tank' },
+      { id:'yamahanmax155', name:'Yamaha NMAX 155 (2026)', energy:'gasoline', capacity:7.1, consumption:2.3, unit:'L/100km', note:'2.3 L/100km · 7.1 L tank' },
+      { id:'yamahaaerox155', name:'Yamaha Aerox 155 (2025)', energy:'gasoline', capacity:5.5, consumption:2.2, unit:'L/100km', note:'2.2 L/100km · 5.5 L tank' },
+      { id:'yamahafazzio', name:'Yamaha Fazzio 125 (2025)', energy:'gasoline', capacity:5.1, consumption:1.8, unit:'L/100km', note:'1.8 L/100km · 5.1 L tank' },
+      { id:'yamahagrandfilano', name:'Yamaha Grand Filano Hybrid (2025)', energy:'gasoline', capacity:4.4, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 4.4 L tank' },
+      { id:'yamahaxride125', name:'Yamaha X-Ride 125 (2024)', energy:'gasoline', capacity:4.2, consumption:2.0, unit:'L/100km', note:'2.0 L/100km · 4.2 L tank' },
+      { id:'yamahaqbix', name:'Yamaha QBIX 125 (2023)', energy:'gasoline', capacity:4.2, consumption:2.0, unit:'L/100km', note:'2.0 L/100km · 4.2 L tank' },
+      { id:'yamahafinn', name:'Yamaha Finn 115i (2024)', energy:'gasoline', capacity:4.0, consumption:1.6, unit:'L/100km', note:'1.6 L/100km · 4.0 L tank' },
+      { id:'yamahaexciter155', name:'Yamaha Exciter 155 VVA (2025)', energy:'gasoline', capacity:5.4, consumption:2.1, unit:'L/100km', note:'2.1 L/100km · 5.4 L tank' },
+      { id:'yamahamt15', name:'Yamaha MT-15 (2025)', energy:'gasoline', capacity:10.4, consumption:2.3, unit:'L/100km', note:'2.3 L/100km · 10.4 L tank' },
+      { id:'yamahar15', name:'Yamaha YZF-R15 (2025)', energy:'gasoline', capacity:11.0, consumption:2.3, unit:'L/100km', note:'2.3 L/100km · 11.0 L tank' },
+      { id:'yamahaxsr155', name:'Yamaha XSR155 (2025)', energy:'gasoline', capacity:10.4, consumption:2.3, unit:'L/100km', note:'2.3 L/100km · 10.4 L tank' },
+      { id:'yamahawr155r', name:'Yamaha WR155R (2024)', energy:'gasoline', capacity:8.1, consumption:2.6, unit:'L/100km', note:'2.6 L/100km · 8.1 L tank' },
+      { id:'yamahaxmax300', name:'Yamaha XMAX 300 (2025)', energy:'gasoline', capacity:13.0, consumption:3.2, unit:'L/100km', note:'3.2 L/100km · 13.0 L tank' },
+
+      // Suzuki
+      { id:'suzukismash115', name:'Suzuki Smash 115 Fi (2025)', energy:'gasoline', capacity:3.7, consumption:1.7, unit:'L/100km', note:'1.7 L/100km · 3.7 L tank' },
+      { id:'suzukinexcrossover', name:'Suzuki Nex Crossover (2024)', energy:'gasoline', capacity:3.6, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 3.6 L tank' },
+      { id:'suzukilets', name:'Suzuki Let\'s 110 (2023)', energy:'gasoline', capacity:3.5, consumption:1.8, unit:'L/100km', note:'1.8 L/100km · 3.5 L tank' },
+      { id:'suzukiburgman125', name:'Suzuki Burgman Street 125 EX (2025)', energy:'gasoline', capacity:5.5, consumption:1.9, unit:'L/100km', note:'1.9 L/100km · 5.5 L tank' },
+      { id:'suzukiraider150', name:'Suzuki Raider R150 Fi (2025)', energy:'gasoline', capacity:4.0, consumption:2.4, unit:'L/100km', note:'2.4 L/100km · 4.0 L tank' },
+      { id:'suzukigixxer155', name:'Suzuki Gixxer SF 155 (2024)', energy:'gasoline', capacity:12.0, consumption:2.2, unit:'L/100km', note:'2.2 L/100km · 12.0 L tank' },
+      { id:'suzukivstrom250sx', name:'Suzuki V-Strom 250 SX (2025)', energy:'gasoline', capacity:12.0, consumption:3.1, unit:'L/100km', note:'3.1 L/100km · 12.0 L tank' },
+
+      // GPX
+      { id:'gpxpopz110', name:'GPX POPz 110 (2024)', energy:'gasoline', capacity:4.0, consumption:2.1, unit:'L/100km', note:'2.1 L/100km · 4.0 L tank' },
+      { id:'gpxpopz125', name:'GPX POPz 125 Fi (2025)', energy:'gasoline', capacity:4.0, consumption:2.0, unit:'L/100km', note:'2.0 L/100km · 4.0 L tank' },
+      { id:'gpxrock110', name:'GPX Rock 110 (2024)', energy:'gasoline', capacity:4.0, consumption:2.0, unit:'L/100km', note:'2.0 L/100km · 4.0 L tank' },
+      { id:'gpxtuscany150', name:'GPX Tuscany 150 (2025)', energy:'gasoline', capacity:5.7, consumption:2.3, unit:'L/100km', note:'2.3 L/100km · 5.7 L tank' },
+      { id:'gpxdrone150', name:'GPX Drone 150 4V (2024)', energy:'gasoline', capacity:7.5, consumption:2.5, unit:'L/100km', note:'2.5 L/100km · 7.5 L tank' },
+      { id:'gpxdz3', name:'GPX DZ3 (2025)', energy:'gasoline', capacity:10.5, consumption:3.2, unit:'L/100km', note:'3.2 L/100km · 10.5 L tank' },
+      { id:'gpxdemongr200r', name:'GPX Demon GR200R 4V (2024)', energy:'gasoline', capacity:11.0, consumption:3.0, unit:'L/100km', note:'3.0 L/100km · 11.0 L tank' },
+      { id:'gpxlegend250', name:'GPX Legend 250 Twin III (2024)', energy:'gasoline', capacity:14.5, consumption:3.4, unit:'L/100km', note:'3.4 L/100km · 14.5 L tank' },
+
+      // Kawasaki, Vespa, Zontes, Keeway & Bajaj
+      { id:'kawasakiklx150', name:'Kawasaki KLX150 (2024)', energy:'gasoline', capacity:6.9, consumption:2.7, unit:'L/100km', note:'2.7 L/100km · 6.9 L tank' },
+      { id:'kawasakiklx230', name:'Kawasaki KLX230 (2025)', energy:'gasoline', capacity:7.5, consumption:2.9, unit:'L/100km', note:'2.9 L/100km · 7.5 L tank' },
+      { id:'kawasakidtracker150', name:'Kawasaki D-Tracker 150 (2023)', energy:'gasoline', capacity:6.9, consumption:2.7, unit:'L/100km', note:'2.7 L/100km · 6.9 L tank' },
+      { id:'kawasakininja400', name:'Kawasaki Ninja 400 (2024)', energy:'gasoline', capacity:14.0, consumption:4.0, unit:'L/100km', note:'4.0 L/100km · 14.0 L tank' },
+      { id:'vespaprimavera150', name:'Vespa Primavera 150 (2025)', energy:'gasoline', capacity:8.0, consumption:2.6, unit:'L/100km', note:'2.6 L/100km · 8.0 L tank' },
+      { id:'vespasprint150', name:'Vespa Sprint 150 (2025)', energy:'gasoline', capacity:8.0, consumption:2.6, unit:'L/100km', note:'2.6 L/100km · 8.0 L tank' },
+      { id:'zontes368g', name:'Zontes 368G ADV (2025)', energy:'gasoline', capacity:17.5, consumption:3.5, unit:'L/100km', note:'3.5 L/100km · 17.5 L tank' },
+      { id:'keewaysr125', name:'Keeway SR 125 (2025)', energy:'gasoline', capacity:14.2, consumption:2.2, unit:'L/100km', note:'2.2 L/100km · 14.2 L tank' },
+      { id:'bajajpulsar150', name:'Bajaj Pulsar 150 (2024)', energy:'gasoline', capacity:15.0, consumption:2.2, unit:'L/100km', note:'2.2 L/100km · 15.0 L tank' },
+
+      // Electric Motorbikes in Cambodia
+      { id:'voltramatrix', name:'Voltra Matrix (2025)', energy:'electric', capacity:1.68, consumption:2.0, unit:'kWh/100km', note:'2.0 kWh/100km · 1.68 kWh battery' },
+      { id:'yadeags70', name:'Yadea GS70 (2026)', energy:'electric', capacity:2.16, consumption:2.7, unit:'kWh/100km', note:'2.7 kWh/100km · 2.16 kWh battery' },
+      { id:'yadeaosta', name:'Yadea Osta (2026)', energy:'electric', capacity:1.92, consumption:2.7, unit:'kWh/100km', note:'2.7 kWh/100km · 1.92 kWh battery' }
     ]}
 ]
