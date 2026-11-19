@@ -51,24 +51,63 @@ export function loadGoogleMaps() {
   return googleMapsPromise
 }
 
-export async function searchGooglePlaces(query) {
+export function googleMapsErrorMessage(error, service = 'Google Maps') {
+  const raw = error?.message || (typeof error === 'string' ? error : '')
+  const message = raw.toLowerCase()
+  if (/key is not configured|api key is not configured/.test(message)) {
+    return 'Add VITE_GOOGLE_MAPS_API_KEY to the app environment and enable the required Google Maps APIs.'
+  }
+  if (/quota|over_query_limit|over_daily_limit|resource exhausted|resource_exhausted|rate.?limit|429/.test(message)) {
+    return `${service} has reached a usage limit. Check Google Cloud billing and quotas, then try again later.`
+  }
+  if (/not authorized|request_denied|not enabled|not activated|disabled|forbidden|403|referer|api key|apikey|unauthorized/.test(message)) {
+    const api = service === 'Google Routes' ? 'Routes API' : service === 'Google Geocoding' ? 'Geocoding API' : 'Places API (New)'
+    return `${service} is unavailable for this key. Enable the ${api}, verify billing, and check the website referrer restrictions.`
+  }
+  return raw ? `${service} failed: ${raw.slice(0, 220)}` : `${service} could not complete the request. Check the API key, enabled APIs, billing, and quota.`
+}
+
+export async function geocodeGoogleAddress(address) {
   const maps = await loadGoogleMaps()
-  const { Place } = await maps.importLibrary('places')
-  const { places = [] } = await Place.searchByText({
-    textQuery: `${query} in Cambodia`,
-    fields: ['displayName', 'location', 'formattedAddress', 'businessStatus', 'googleMapsURI'],
-    language: 'en',
+  const { Geocoder } = await maps.importLibrary('geocoding')
+  const { results = [] } = await new Geocoder().geocode({ address, region: 'kh' })
+  const result = results[0]
+  if (!result?.geometry?.location) throw new Error('No Google result matched that address. Try a fuller address or a nearby landmark.')
+  const location = result.geometry.location
+  return {
+    lat: typeof location.lat === 'function' ? location.lat() : location.lat,
+    lng: typeof location.lng === 'function' ? location.lng() : location.lng,
+    name: result.name || result.formatted_address || address,
+    formattedAddress: result.formatted_address || result.name || address,
+    placeId: result.place_id,
+    isCurrentLocation: false,
+  }
+}
+
+export async function computeGoogleRoute(origin, destination) {
+  const maps = await loadGoogleMaps()
+  const { Route } = await maps.importLibrary('routes')
+  const { routes = [] } = await Route.computeRoutes({
+    origin: { lat: origin.lat, lng: origin.lng },
+    destination: { lat: destination.lat, lng: destination.lng },
+    travelMode: 'DRIVING',
     region: 'kh',
-    maxResultCount: 6,
+    fields: ['distanceMeters', 'durationMillis', 'path'],
   })
-  return places.filter(place => place.location).map(place => ({
-    name: place.displayName || 'Google Maps place',
-    detail: [place.formattedAddress, place.businessStatus === 'CLOSED_PERMANENTLY' ? 'Permanently closed' : ''].filter(Boolean).join(' · '),
-    lat: place.location.lat(),
-    lng: place.location.lng(),
-    placeId: place.id,
-    mapsUrl: place.googleMapsURI,
-  }))
+  const route = routes[0]
+  if (!route?.path?.length || !Number.isFinite(route.distanceMeters) || !Number.isFinite(route.durationMillis)) {
+    throw new Error('Google Routes returned no usable driving route for those places.')
+  }
+  const path = route.path.map(point => [
+    typeof point.lng === 'function' ? point.lng() : point.lng,
+    typeof point.lat === 'function' ? point.lat() : point.lat,
+  ]).filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat))
+  if (path.length < 2) throw new Error('Google Routes returned an incomplete route path.')
+  return {
+    path,
+    distanceMeters: route.distanceMeters,
+    durationMillis: route.durationMillis,
+  }
 }
 
 const distanceKm = (a, b) => {

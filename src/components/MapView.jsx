@@ -287,7 +287,7 @@ export default function MapView({ origin, destination, route, stations = [], fil
     {status !== 'ready' && <div className="absolute inset-0 grid place-items-center bg-slate-900/95 p-6 text-center text-white">
       <div className="max-w-md rounded-2xl border border-white/10 bg-ink/95 p-6 shadow-xl">
         <div className="text-lg font-bold">{status === 'missing-key' ? 'Google Maps API key required' : status === 'error' ? 'Google Maps failed to load' : 'Loading Google Maps…'}</div>
-        {status === 'missing-key' && <p className="mt-3 text-sm leading-6 text-slate-300">Enable Maps JavaScript API and Places API (New) in Google Cloud, then add <code className="text-emeraldx">VITE_GOOGLE_MAPS_API_KEY=your_key</code> to <code className="text-emeraldx">.env.local</code> and restart Vite. Billing is required. On Vercel, add the same variable under Project Settings, Environment Variables and redeploy; restrict the key to your domain and these APIs.</p>}
+        {status === 'missing-key' && <p className="mt-3 text-sm leading-6 text-slate-300">Enable Maps JavaScript API, Places API (New), and Routes API in Google Cloud. Enable Geocoding API for the address-search fallback. Add <code className="text-emeraldx">VITE_GOOGLE_MAPS_API_KEY=your_key</code> to <code className="text-emeraldx">.env.local</code> and restart Vite. Billing is required. On Vercel, add the same variable under Project Settings, Environment Variables and redeploy; restrict the key to your domain and enabled APIs.</p>}
         {status === 'error' && <p className="mt-3 text-sm leading-6 text-slate-300">{loadError || 'Check the API key, HTTP referrer restrictions, enabled APIs, billing, and network connection.'}</p>}
       </div>
     </div>}
