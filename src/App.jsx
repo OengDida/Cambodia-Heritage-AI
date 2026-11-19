@@ -57,18 +57,18 @@ function Setup({onBack,onGenerate,config,setConfig}) {
 }
 function TripPlanner({config,onChangeVehicle}) {
   const [originName,setOriginName]=useState('Phnom Penh')
-  const [destinationName,setDestinationName]=useState('Siem Reap')
+  const [destinationName,setDestinationName]=useState('')
   const [origin,setOrigin]=useState(provinces[0])
-  const [destination,setDestination]=useState(provinces[1])
+  const [destination,setDestination]=useState(null)
   const [route,setRoute]=useState([])
   const [distance,setDistance]=useState(0)
   const [duration,setDuration]=useState(0)
-  const [routeStatus,setRouteStatus]=useState('Choose your endpoints')
+  const [routeStatus,setRouteStatus]=useState('Choose a destination')
   const [filter,setFilter]=useState('all')
   const [rates,setRates]=useState(defaultRates)
   const [showRates,setShowRates]=useState(false)
   const [prompt,setPrompt]=useState('')
-  const [mapClickMode,setMapClickMode]=useState('origin')
+  const [mapClickMode,setMapClickMode]=useState('destination')
   const [routeError,setRouteError]=useState(false)
   const [showStations,setShowStations]=useState(false)
   const [locating,setLocating]=useState(false)
@@ -142,6 +142,7 @@ function TripPlanner({config,onChangeVehicle}) {
     )
   }
   const recommendation=()=>{
+    if(!destination)return `${vehicleName} has approximately ${Math.round(currentRange)} km of range at ${config.level}%. Choose a destination to check the route, range and suggested stops.`
     if(lowRange){
       const stop=recommended[0]
       return stop?`${vehicleName} has approximately ${Math.round(currentRange)} km of range at ${config.level}% and the destination is ${Math.round(distance-currentRange)} km beyond that. Plan a stop at ${stop.name} (${stop.road}) before reaching the estimated range limit. Confirm the connector and live availability before departure.`:`Your estimated range (${Math.round(currentRange)} km) is shorter than this ${Math.round(distance)} km trip. No compatible station pin was found close to the displayed route corridor. Add a safety stop and verify local options before leaving.`
@@ -165,7 +166,7 @@ function TripPlanner({config,onChangeVehicle}) {
           <div className="my-2 flex items-center justify-between"><span className="text-[10px] text-slate-500">Tap map to set a pin</span><button onClick={()=>setMapClickMode(x=>x==='origin'?'destination':'origin')} className="text-[10px] font-bold text-emeraldx">Pin next: {mapClickMode}</button></div>
           <Field label="Destination"><Select value={provinces.some(p=>p.name===destinationName)?destinationName:''} onChange={updateDestination}><option value="" disabled>Choose destination</option>{provinces.map(p=><option key={p.name}>{p.name}</option>)}</Select></Field>
           <div className="mt-3 flex items-center justify-between rounded-xl bg-black/20 p-3"><div><div className="text-[10px] uppercase text-slate-500">Vehicle</div><div className="mt-1 text-xs font-bold">{vehicleName}</div></div><div className="text-right"><div className="text-[10px] uppercase text-slate-500">Current level</div><div className="mt-1 text-sm font-black text-emeraldx">{config.level}%</div></div></div>
-          <button onClick={()=>calculate()} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emeraldx py-3 text-xs font-extrabold text-ink hover:bg-emerald-300"><Navigation size={15}/> Recalculate route</button>
+          <button onClick={()=>calculate()} disabled={!destination} className="disabled:opacity-40 mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emeraldx py-3 text-xs font-extrabold text-ink hover:bg-emerald-300"><Navigation size={15}/> Recalculate route</button>
           <div className="mt-2 text-center text-[10px] text-slate-500">{routeStatus}</div>
         </Panel>
         <Panel className="p-4">
@@ -191,9 +192,9 @@ function TripPlanner({config,onChangeVehicle}) {
         </Panel>
       </div>
       <div className="pointer-events-auto hidden w-[290px] flex-col gap-3 lg:flex">
-        <Panel className="p-4"><div className="text-xs font-extrabold">Route overview</div><div className="mt-3 flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-emeraldx"/><div className="text-xs font-semibold">{origin.name}</div></div><div className="ml-1 my-1 h-5 border-l border-dashed border-slate-600"/><div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-amberx"/><div className="text-xs font-semibold">{destination.name}</div></div><div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3"><div><div className="text-[10px] text-slate-500">Distance</div><b>{fmt(distance)} km</b></div><div><div className="text-[10px] text-slate-500">ETA</div><b>{fmtTime(duration)}</b></div></div></Panel>
-        <Panel className="p-4"><div className="mb-3 flex items-center gap-2 text-xs font-extrabold"><Activity size={15} className="text-emeraldx"/> Range & dead-zone monitor</div><div className="flex items-end justify-between"><span className="text-[10px] text-slate-500">Estimated remaining range</span><b className={lowRange?'text-rose-300':'text-emeraldx'}>{fmt(currentRange)} km</b></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className={cx('h-full rounded-full',lowRange?'bg-rose-400':'bg-emeraldx')} style={{width:`${Math.min(100,distance/currentRange*100)}%`}}/></div><div className="mt-2 text-[10px] leading-4 text-slate-400">{lowRange?'Range limit falls before destination.':'Estimated range covers the route.'}</div></Panel>
-        <Panel className="p-4"><div className="mb-3 text-xs font-extrabold">Pit-stop itinerary</div><div className="space-y-3"><div className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-emeraldx"/><div><b className="text-xs">{origin.name}</b><div className="text-[10px] text-slate-500">Start journey</div></div></div>{recommended.map(s=><div key={s.id} className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-300"/><div><b className="text-xs">{s.name}</b><div className="text-[10px] text-slate-500">Approx. route progress · {s.road}</div></div></div>)}{lowRange&&!recommended.length&&<div className="rounded-lg bg-rose-400/10 p-2 text-[10px] text-rose-200">No compatible stop confidently identified. Plan an alternate stop.</div>}<div className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-amberx"/><div><b className="text-xs">{destination.name}</b><div className="text-[10px] text-slate-500">Destination</div></div></div></div></Panel>
+        <Panel className="p-4"><div className="text-xs font-extrabold">Route overview</div><div className="mt-3 flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-emeraldx"/><div className="text-xs font-semibold">{origin.name}</div></div><div className="ml-1 my-1 h-5 border-l border-dashed border-slate-600"/><div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-amberx"/><div className="text-xs font-semibold">{destination?destination.name:'Choose destination'}</div></div><div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3"><div><div className="text-[10px] text-slate-500">Distance</div><b>{fmt(distance)} km</b></div><div><div className="text-[10px] text-slate-500">ETA</div><b>{fmtTime(duration)}</b></div></div></Panel>
+        <Panel className="p-4"><div className="mb-3 flex items-center gap-2 text-xs font-extrabold"><Activity size={15} className="text-emeraldx"/> Range & dead-zone monitor</div><div className="flex items-end justify-between"><span className="text-[10px] text-slate-500">Estimated remaining range</span><b className={lowRange?'text-rose-300':'text-emeraldx'}>{fmt(currentRange)} km</b></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className={cx('h-full rounded-full',lowRange?'bg-rose-400':'bg-emeraldx')} style={{width:`${Math.min(100,distance/currentRange*100)}%`}}/></div><div className="mt-2 text-[10px] leading-4 text-slate-400">{!destination?'Choose a destination to check range.':lowRange?'Range limit falls before destination.':'Estimated range covers the route.'}</div></Panel>
+        <Panel className="p-4"><div className="mb-3 text-xs font-extrabold">Pit-stop itinerary</div><div className="space-y-3"><div className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-emeraldx"/><div><b className="text-xs">{origin.name}</b><div className="text-[10px] text-slate-500">Start journey</div></div></div>{recommended.map(s=><div key={s.id} className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-300"/><div><b className="text-xs">{s.name}</b><div className="text-[10px] text-slate-500">Approx. route progress · {s.road}</div></div></div>)}{lowRange&&!recommended.length&&<div className="rounded-lg bg-rose-400/10 p-2 text-[10px] text-rose-200">No compatible stop confidently identified. Plan an alternate stop.</div>}<div className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-amberx"/><div><b className="text-xs">{destination?destination.name:'Choose destination'}</b><div className="text-[10px] text-slate-500">Destination</div></div></div></div></Panel>
         <div className="rounded-xl border border-white/10 bg-ink/85 p-3 text-[10px] leading-4 text-slate-400 backdrop-blur"><Info size={13} className="mb-1 text-amberx"/> Route and travel time from OSRM are estimates. Map click mode: <b className="text-emeraldx">{mapClickMode}</b>. Tap the map to place a custom pin.</div>
       </div>
     </div>
