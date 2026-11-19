@@ -94,7 +94,9 @@ export async function computeGoogleRoute(origin, destination) {
     // Match the live-traffic route and travel-time behavior people expect
     // from Google Maps, instead of returning a static/unaware duration.
     routingPreference: 'TRAFFIC_AWARE',
-    departureTime: new Date(),
+    // The Routes API rejects a timestamp that has become even slightly past
+    // by the time the request reaches Google. Use a small future buffer.
+    departureTime: new Date(Date.now() + 60_000),
     region: 'kh',
     fields: ['distanceMeters', 'durationMillis', 'path'],
   })
