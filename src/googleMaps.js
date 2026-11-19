@@ -163,6 +163,7 @@ export async function searchStationsAlongRoute(routeCoordinates, category = 'all
         locationRestriction: { center: { lat, lng }, radius: 10000 },
         rankPreference: 'DISTANCE', maxResultCount: 20,
         fields: ['id', 'displayName', 'location', 'formattedAddress', 'businessStatus', 'googleMapsURI', 'types', 'primaryType', 'svgIconMaskURI'],
+        fields: ['id', 'displayName', 'location', 'formattedAddress', 'businessStatus', 'googleMapsURI', 'types', 'primaryType'],
         language: 'en', region: 'kh',
       })
       return places
