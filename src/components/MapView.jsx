@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { googleMapsKey, loadGoogleMaps } from '../googleMaps'
 
-export default function MapView({ origin, destination, route, stations, filter, onMapClick, rangePoint }) {
+export default function MapView({ origin, destination, route, onMapClick, rangePoint }) {
   const host = useRef(null)
   const map = useRef(null)
   const clickRef = useRef(onMapClick)
@@ -27,10 +27,8 @@ export default function MapView({ origin, destination, route, stations, filter, 
       instance = new Map(host.current, {
         center: { lat: 12.15, lng: 104.90 }, zoom: 7,
         mapTypeControl: true, streetViewControl: false, fullscreenControl: true,
-        clickableIcons: false,
-        styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }],
+        clickableIcons: true,
         styles: [
-          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
           { featureType: 'transit.station.bus', stylers: [{ visibility: 'off' }] },
         ],
       })
@@ -64,8 +62,6 @@ export default function MapView({ origin, destination, route, stations, filter, 
     }
     addPin(origin, `Origin: ${origin?.name || ''}`, '#20d69a', 'A')
     addPin(destination, `Destination: ${destination?.name || ''}`, '#f7b84b', 'B')
-    const visible = stations.filter(s => filter === 'all' || (filter === 'ev' && s.type !== 'gas_only') || (filter === 'gas' && s.type !== 'ev_only') || (filter === 'hybrid' && s.type === 'hybrid_hub'))
-    visible.forEach(s => addPin(s, `${s.name} · ${s.brand} · ${s.road} · Verify current availability`, s.type === 'ev_only' ? '#53b7ff' : s.type === 'gas_only' ? '#f7b84b' : '#b69cff', s.type === 'ev_only' ? '⚡' : s.type === 'gas_only' ? '⛽' : '•'))
     addPin(rangePoint, 'Estimated range limit', '#ff647c', '!')
     if (route?.length > 1) line = new maps.Polyline({
       map: instance,
