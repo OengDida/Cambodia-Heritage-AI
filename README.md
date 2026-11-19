@@ -7,29 +7,29 @@ SmartRoute AI is a browser-based trip-planning application that combines road-ro
 - **Live Demo:** https://smartroute-dev.vercel.app
 - **GitHub:** https://github.com/OengDida/SmartRoute-AI
 
-> **Important:** The AI Co-Pilot currently uses rule-based recommendations. This application is a planning aid, not a live navigation service. Always verify routes, station details, and prices before travelling.
+> **Important:** The AI Co-Pilot currently uses rule-based recommendations. This application is a planning aid, not a live navigation service. Always verify routes, station details, and prices before traveling.
 
 ## ✨ Features
 
 ### 🗺️ Route Planning
-- Select origin and destination from supported Cambodian provinces and cities.
-- Use current browser location to set your starting point.
+- Select an origin and destination from supported Cambodian provinces and cities.
+- Use your current browser location to set your starting point.
 - Click directly on the map to place custom origin and destination pins.
 - Calculate estimated driving distance and travel time using OSRM.
-- Fallback to approximate distance calculations when routing services are unavailable.
+- Fall back to approximate distance calculations when routing services are unavailable.
 
 ### 🚗 Vehicle Profiles & Range Estimation
 - Support five vehicle categories:
-  - Electric Vehicles (EV)
+  - Electric Vehicles (EVs)
   - Hybrid Vehicles
   - Gasoline Vehicles
   - Diesel Vehicles
-  - Motorbikes
+  - Motorcycles
 - Choose from predefined vehicle profiles.
 - Configure custom or modified vehicles.
 - Set fuel or battery capacity and current energy level.
 - Calculate estimated remaining driving range.
-- Receive warnings when the destination exceeds estimated vehicle range.
+- Receive warnings when the destination exceeds the vehicle's estimated range.
 
 ### ⚡ Fuel & Charging Station Finder
 - Discover EV charging stations and fuel stations.
@@ -45,7 +45,7 @@ SmartRoute AI is a browser-based trip-planning application that combines road-ro
 ### 💰 Trip Cost Calculator
 - Estimate fuel or electricity consumption.
 - Calculate estimated total trip expenses.
-- Compare EV charging costs against gasoline costs.
+- Compare EV charging costs with gasoline costs.
 - Display costs in Cambodian riel (KHR) and US dollars (USD).
 - Customize fuel prices, EV charging tariffs, and exchange rates.
 
@@ -53,8 +53,8 @@ SmartRoute AI is a browser-based trip-planning application that combines road-ro
 - Provides vehicle-range recommendations.
 - Identifies potential range-related risks.
 - Suggests compatible stops along the route.
-- Offers EV versus gasoline cost comparisons.
-- Provides basic eco-driving tips.
+- Provides EV versus gasoline cost comparisons.
+- Offers basic eco-driving tips.
 
 ## 🛠️ Technology Stack
 
@@ -74,7 +74,7 @@ SmartRoute AI is a browser-based trip-planning application that combines road-ro
 
 ### Prerequisites
 
-Make sure you have installed:
+Make sure you have the following installed:
 
 - Node.js (recommended: current LTS version)
 - npm
@@ -82,45 +82,45 @@ Make sure you have installed:
 
 ### 1. Clone the repository
 
-\`\`\`bash
+```bash
 git clone https://github.com/OengDida/SmartRoute-AI.git
-\`\`\`
+```
 
 ### 2. Navigate to the project directory
 
-\`\`\`bash
+```bash
 cd SmartRoute-AI
-\`\`\`
+```
 
 ### 3. Install dependencies
 
-\`\`\`bash
+```bash
 npm install
-\`\`\`
+```
 
 ### 4. Start the development server
 
-\`\`\`bash
+```bash
 npm run dev
-\`\`\`
+```
 
 Open the local URL displayed in your terminal to access SmartRoute AI.
 
 ### 5. Build for production
 
-\`\`\`bash
+```bash
 npm run build
-\`\`\`
+```
 
-### 6. Preview production build
+### 6. Preview the production build
 
-\`\`\`bash
+```bash
 npm run preview
-\`\`\`
+```
 
 ## 📂 Project Structure
 
-\`\`\`text
+```text
 SmartRoute-AI/
 │
 ├── public/
@@ -146,7 +146,7 @@ SmartRoute-AI/
 ├── tailwind.config.js
 ├── vite.config.js
 └── README.md
-\`\`\`
+```
 
 ## 📊 Default Reference Rates
 
@@ -183,7 +183,7 @@ Please note:
 - The AI Co-Pilot is currently rule-based rather than powered by a generative AI model.
 - The application does not provide turn-by-turn navigation.
 
-Always verify station availability, fuel prices, charging compatibility, and road conditions before travelling.
+Always verify station availability, fuel prices, charging compatibility, and road conditions before traveling.
 
 ## 🔮 Future Improvements
 
@@ -206,21 +206,21 @@ Contributions are welcome!
 1. Fork this repository.
 2. Create a feature branch:
 
-   \`\`\`bash
+   ```bash
    git checkout -b feature/your-feature
-   \`\`\`
+   ```
 
 3. Commit your changes:
 
-   \`\`\`bash
+   ```bash
    git commit -m "Add: your feature"
-   \`\`\`
+   ```
 
 4. Push your branch:
 
-   \`\`\`bash
+   ```bash
    git push origin feature/your-feature
-   \`\`\`
+   ```
 
 5. Open a Pull Request.
 
@@ -232,7 +232,6 @@ No license is currently specified in this repository. All rights are reserved by
 
 **SmartRoute AI**
 
-*Every kilometre. Smarter.*
+*Every kilometer. Smarter.*
 
 Built to make Cambodia's journeys more efficient, affordable, and sustainable.
-
