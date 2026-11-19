@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Fuel, Gauge, Info, LocateFixed, Leaf, Map as MapIcon, MapPin, Navigation, PlugZap, Route, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
+import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Fuel, Gauge, Github, Info, LocateFixed, Leaf, Map as MapIcon, MapPin, Navigation, PlugZap, Route, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
 import MapView from './components/MapView'
 import { vehicleGroups } from './data/vehicles'
 import { provinces, stations } from './data/places'
@@ -14,7 +14,11 @@ function Panel({children,className=''}){return <div className={cx('glass rounded
 function Pill({children,active,onClick}){return <button onClick={onClick} className={cx('rounded-full px-3 py-2 text-xs font-semibold transition',active?'bg-emeraldx text-ink':'bg-white/5 text-slate-300 hover:bg-white/10')}>{children}</button>}
 function Field({label,children}){return <label className="block space-y-2"><span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>{children}</label>}
 function Select({value,onChange,children}){return <div className="relative"><select value={value} onChange={e=>onChange(e.target.value)} className="field w-full appearance-none pr-9">{children}</select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-slate-400"/></div>}
-function Welcome({onStart}){return <main className="welcome min-h-screen overflow-hidden px-5 text-white">
+const repo='https://github.com/OengDida/SmartRoute-AI'
+function FooterCol({title,children}){return <div><div className="mb-2 text-sm font-bold text-white">{title}</div><ul className="space-y-0.5">{children}</ul></div>}
+function FLink({href,onClick,external,children}){return <li><a href={href} onClick={onClick?e=>{e.preventDefault();onClick()}:undefined} {...(external?{target:'_blank',rel:'noopener noreferrer'}:{})} className="text-sm leading-6 text-slate-400 transition hover:text-emeraldx">{children}</a></li>}
+function FText({children}){return <li className="text-sm leading-6 text-slate-500">{children}</li>}
+function Welcome({onStart,onRoute}){return <main className="welcome min-h-screen overflow-hidden px-5 text-white">
   <div className="absolute inset-0 bg-grid opacity-30"/>
   <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col">
     <header className="flex items-center gap-3 py-7"><img src="/favicon.svg" alt="SmartRoute AI logo" className="h-11 w-11 object-contain [filter:drop-shadow(0_0_12px_rgba(32,214,154,0.35))]"/><div><div className="text-xl font-black tracking-tight">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[10px] uppercase tracking-[.24em] text-slate-500">Cambodia mobility intelligence</div></div></header>
@@ -31,7 +35,18 @@ function Welcome({onStart}){return <main className="welcome min-h-screen overflo
         <div className="mt-4 grid grid-cols-3 gap-2 text-center"><div className="rounded-xl bg-white/5 p-3"><Route size={16} className="mx-auto mb-2 text-emeraldx"/><b className="text-sm">Route</b><p className="text-[10px] text-slate-500">OSRM powered</p></div><div className="rounded-xl bg-white/5 p-3"><BatteryCharging size={16} className="mx-auto mb-2 text-blue-300"/><b className="text-sm">Range</b><p className="text-[10px] text-slate-500">Dead-zone alerts</p></div><div className="rounded-xl bg-white/5 p-3"><CircleDollarSign size={16} className="mx-auto mb-2 text-amberx"/><b className="text-sm">Cost</b><p className="text-[10px] text-slate-500">KHR + USD</p></div></div>
       </div></div>
     </section>
-    <footer className="flex flex-wrap justify-between gap-3 border-t border-white/10 py-5 text-[11px] text-slate-500"><span>SmartRoute AI · Cambodia trip intelligence</span><span>OpenStreetMap · OSRM · Local reference data</span></footer>
+    <footer className="border-t border-white/10 pt-12">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div><div className="flex items-center gap-3"><img src="/favicon.svg" alt="SmartRoute AI logo" className="h-9 w-9 object-contain"/><div className="text-lg font-black tracking-tight">SmartRoute <span className="text-emeraldx">AI</span></div></div><p className="mt-4 max-w-xs text-sm leading-6 text-slate-500">Highway range and trip-cost planning for Cambodia. Plan ahead. Arrive prepared.</p><div className="mt-6 flex gap-3"><a href={repo} target="_blank" rel="noopener noreferrer" aria-label="SmartRoute AI on GitHub" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-slate-400 transition hover:border-emeraldx/50 hover:text-emeraldx"><Github size={18}/></a></div></div>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4">
+          <FooterCol title="Planner"><FLink href="/vehicle" onClick={onStart}>Launch SmartRoute AI</FLink><FLink href="/vehicle" onClick={onStart}>Vehicle profile</FLink><FLink href="/route" onClick={onRoute}>Map &amp; route</FLink></FooterCol>
+          <FooterCol title="Powertrains"><FText>Electric</FText><FText>Hybrid</FText><FText>Gasoline</FText><FText>Diesel</FText><FText>Motorbike</FText></FooterCol>
+          <FooterCol title="Data &amp; maps"><FLink href="https://www.openstreetmap.org" external>OpenStreetMap</FLink><FLink href="https://project-osrm.org" external>OSRM routing</FLink><FLink href="https://leafletjs.com" external>Leaflet</FLink><FLink href={repo+'/blob/main/src/data/places.js'} external>Station data</FLink></FooterCol>
+          <FooterCol title="Project"><FLink href={repo} external>GitHub</FLink><FLink href={repo+'/issues'} external>Report an issue</FLink><FLink href="/sitemap.xml" external>Sitemap</FLink></FooterCol>
+        </div>
+      </div>
+      <div className="mt-12 flex flex-wrap justify-between gap-x-6 gap-y-2 border-t border-white/10 py-6 text-[11px] leading-5 text-slate-500"><span>© 2026 SmartRoute AI · Cambodia trip intelligence</span><span className="max-w-xl sm:text-right">Estimates only. Station data is a curated dataset, not a live directory. Verify fuel and charger availability before you travel.</span></div>
+    </footer>
   </div>
 </main>}
 function Setup({onBack,onGenerate,config,setConfig}) {
@@ -233,5 +248,5 @@ export default function App(){
     const titles=['SmartRoute AI — Cambodia Trip Planner','Vehicle profile · SmartRoute AI','Map & Route · SmartRoute AI']
     document.title=titles[step]
   },[step])
-  return step===0?<Welcome onStart={()=>setStep(1)}/>:step===1?<Setup onBack={()=>setStep(0)} onGenerate={()=>setStep(2)} config={config} setConfig={setConfig}/>:<TripPlanner config={config} onChangeVehicle={()=>setStep(1)}/>
+  return step===0?<Welcome onStart={()=>setStep(1)} onRoute={()=>setStep(2)}/>:step===1?<Setup onBack={()=>setStep(0)} onGenerate={()=>setStep(2)} config={config} setConfig={setConfig}/>:<TripPlanner config={config} onChangeVehicle={()=>setStep(1)}/>
 }
