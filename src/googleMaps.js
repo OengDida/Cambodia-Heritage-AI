@@ -78,7 +78,7 @@ const distanceKm = (a, b) => {
   return 6371 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
 }
 
-function sampleRoute(coordinates, spacingKm = 40, maxPoints = 40) {
+function sampleRoute(coordinates, spacingKm = 10, maxPoints = 40) {
   if (!coordinates?.length) return []
   if (coordinates.length === 1) return [coordinates[0]]
   const lengths = [0]
@@ -141,7 +141,7 @@ export async function searchStationsAlongRoute(routeCoordinates, category = 'all
     const results = await Promise.allSettled(batch.map(async ([lng, lat]) => {
       const { places = [] } = await Place.searchNearby({
         includedTypes,
-        locationRestriction: { center: { lat, lng }, radius: 25000 },
+        locationRestriction: { center: { lat, lng }, radius: 10000 },
         rankPreference: 'DISTANCE', maxResultCount: 20,
         fields: ['id', 'displayName', 'location', 'formattedAddress', 'businessStatus', 'googleMapsURI', 'types', 'primaryType'],
         language: 'en', region: 'kh',
