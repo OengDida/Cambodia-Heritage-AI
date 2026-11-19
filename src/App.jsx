@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Fuel, Gauge, Github, Info, LocateFixed, Leaf, Map as MapIcon, MapPin, Navigation, PlugZap, Route, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
+import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Fuel, Gauge, Github, Info, LocateFixed, Leaf, Map as MapIcon, MapPin, Navigation, PlugZap, Route, Search, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
 import MapView from './components/MapView'
 import { vehicleGroups } from './data/vehicles'
 import { provinces, stations } from './data/places'
@@ -14,6 +14,43 @@ function Panel({children,className=''}){return <div className={cx('glass rounded
 function Pill({children,active,onClick}){return <button onClick={onClick} className={cx('rounded-full px-3 py-2 text-xs font-semibold transition',active?'bg-emeraldx text-ink':'bg-white/5 text-slate-300 hover:bg-white/10')}>{children}</button>}
 function Field({label,children}){return <label className="block space-y-2"><span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>{children}</label>}
 function Select({value,onChange,children}){return <div className="relative"><select value={value} onChange={e=>onChange(e.target.value)} className="field w-full appearance-none pr-9">{children}</select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-slate-400"/></div>}
+function PlaceSearch({label,value,placeholder,presets,onPick}){
+  const [q,setQ]=useState('')
+  const [open,setOpen]=useState(false)
+  const [found,setFound]=useState([])
+  const [status,setStatus]=useState('idle')
+  const [searched,setSearched]=useState('')
+  const term=q.trim()
+  const local=term?presets.filter(p=>p.name.toLowerCase().includes(term.toLowerCase())):presets
+  const search=async()=>{
+    if(term.length<2||status==='loading')return
+    setStatus('loading')
+    try{
+      const res=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=kh&accept-language=en&q=${encodeURIComponent(term)}`)
+      if(!res.ok)throw new Error('Search failed')
+      const data=await res.json()
+      setFound(data.map(r=>({name:r.name||r.display_name.split(',')[0],detail:r.display_name,lat:Number(r.lat),lng:Number(r.lon)})))
+      setSearched(term);setStatus('done')
+    }catch{setStatus('error')}
+  }
+  const pick=p=>{onPick(p);setOpen(false);setQ('');setFound([]);setSearched('');setStatus('idle')}
+  const showFound=status==='done'&&searched===term
+  const item='block w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-white/5'
+  return <div className="block space-y-2">
+    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+    <div className="relative"><Search size={15} className="pointer-events-none absolute left-3 top-3.5 text-slate-400"/><input className="field w-full pl-9" value={open?q:value} placeholder={open&&value?value:placeholder} onFocus={()=>{setOpen(true);setQ('')}} onBlur={()=>setOpen(false)} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();search()}else if(e.key==='Escape')e.target.blur()}} autoComplete="off"/></div>
+    {open&&<div onMouseDown={e=>e.preventDefault()} className="max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-black/30 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {local.length>0&&<div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Provinces &amp; cities</div>}
+      {local.map(pl=><button key={pl.name} onClick={()=>pick(pl)} className={item}>{pl.name}</button>)}
+      {term.length>=2&&!showFound&&<button onClick={search} disabled={status==='loading'} className={cx(item,'font-bold text-emeraldx')}>{status==='loading'?'Searching…':`Search all places for “${term}”`}</button>}
+      {showFound&&found.length>0&&<div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Places in Cambodia</div>}
+      {showFound&&found.map((f,i)=><button key={i} onClick={()=>pick(f)} className={item}><div className="font-semibold">{f.name}</div><div className="mt-0.5 truncate text-[10px] text-slate-500">{f.detail}</div></button>)}
+      {showFound&&!found.length&&<div className="px-3 py-3 text-[11px] text-slate-400">No places found. Try a different spelling or a nearby town.</div>}
+      {status==='error'&&<div className="px-3 py-3 text-[11px] text-rose-300">Place search is unavailable. Check your connection and try again.</div>}
+      {term.length<2&&<div className="px-3 py-2 text-[10px] text-slate-500">Type a town, road, hotel or landmark, then press Enter.</div>}
+    </div>}
+  </div>
+}
 const repo='https://github.com/OengDida/SmartRoute-AI'
 function FooterCol({title,children}){return <div><div className="mb-2 text-sm font-bold text-white">{title}</div><ul className="space-y-0.5">{children}</ul></div>}
 function FLink({href,onClick,external,children}){return <li><a href={href} onClick={onClick?e=>{e.preventDefault();onClick()}:undefined} {...(external?{target:'_blank',rel:'noopener noreferrer'}:{})} className="text-sm leading-6 text-slate-400 transition hover:text-emeraldx">{children}</a></li>}
@@ -129,8 +166,8 @@ function TripPlanner({config,onChangeVehicle}) {
     }
   }
   useEffect(()=>{calculate(origin,destination)},[])
-  const updateOrigin=name=>{const p=provinces.find(x=>x.name===name);if(p){setOriginName(name);setOrigin(p);calculate(p,destination)}}
-  const updateDestination=name=>{const p=provinces.find(x=>x.name===name);if(p){setDestinationName(name);setDestination(p);calculate(origin,p)}}
+  const pickOrigin=pl=>{setOriginName(pl.name);setOrigin(pl);calculate(pl,destination)}
+  const pickDestination=pl=>{setDestinationName(pl.name);setDestination(pl);calculate(origin,pl)}
   const handleMapClick=p=>{
     const nearest=provinces.map(x=>({...x,d:kmLine(x,p)})).sort((a,b)=>a.d-b.d)[0]
     const pin={lat:p.lat,lng:p.lng,name:`Map pin near ${nearest.name}`}
@@ -182,11 +219,11 @@ function TripPlanner({config,onChangeVehicle}) {
       <div className={cx('pointer-events-auto max-h-full w-full overflow-y-auto lg:max-w-[390px] [direction:rtl] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',!showLeft&&'hidden')}><div className="flex flex-col gap-3 [direction:ltr]">
         <Panel className="p-4">
           <div className="mb-3 flex items-center justify-between"><div className="text-sm font-extrabold">Plan your journey</div><span className="rounded-full bg-emeraldx/10 px-2 py-1 text-[9px] font-bold uppercase text-emeraldx">Step 03 / Route</span></div>
-          <Field label="Origin"><Select value={provinces.some(p=>p.name===originName)||originName==='Current location'?originName:''} onChange={updateOrigin}><option value="" disabled>Choose origin</option>{originName==='Current location'&&<option value="Current location" disabled>Current location</option>}{provinces.map(p=><option key={p.name}>{p.name}</option>)}</Select></Field>
+          <PlaceSearch label="Origin" value={originName} placeholder="Search a place or choose a province" presets={provinces} onPick={pickOrigin}/>
           <button onClick={useCurrentLocation} disabled={locating} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emeraldx/30 bg-emeraldx/5 py-2.5 text-xs font-bold text-emeraldx transition hover:bg-emeraldx/10 disabled:opacity-60"><LocateFixed size={15} className={locating?'animate-pulse':''}/>{locating?'Locating…':'Use current location'}</button>
           {locNote&&<div className="mt-2 text-[10px] leading-4 text-slate-400">{locNote}</div>}
           <div className="my-2 flex items-center justify-between"><span className="text-[10px] text-slate-500">Tap map to set a pin</span><button onClick={()=>setMapClickMode(x=>x==='origin'?'destination':'origin')} className="text-[10px] font-bold text-emeraldx">Pin next: {mapClickMode}</button></div>
-          <Field label="Destination"><Select value={provinces.some(p=>p.name===destinationName)?destinationName:''} onChange={updateDestination}><option value="" disabled>Choose destination</option>{provinces.map(p=><option key={p.name}>{p.name}</option>)}</Select></Field>
+          <PlaceSearch label="Destination" value={destinationName} placeholder="Search a place or choose a province" presets={provinces} onPick={pickDestination}/>
           <div className="mt-3 flex items-center justify-between rounded-xl bg-black/20 p-3"><div><div className="text-[10px] uppercase text-slate-500">Vehicle</div><div className="mt-1 text-xs font-bold">{vehicleName}</div></div><div className="text-right"><div className="text-[10px] uppercase text-slate-500">Current level</div><div className="mt-1 text-sm font-black text-emeraldx">{config.level}%</div></div></div>
           <button onClick={()=>calculate()} disabled={!origin||!destination} className="disabled:opacity-40 mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emeraldx py-3 text-xs font-extrabold text-ink hover:bg-emerald-300"><Navigation size={15}/> Recalculate route</button>
           <div className="mt-2 text-center text-[10px] text-slate-500">{routeStatus}</div>
