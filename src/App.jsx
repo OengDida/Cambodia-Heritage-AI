@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Fuel, Gauge, Github, Info, LocateFixed, Leaf, Map as MapIcon, MapPin, Navigation, PlugZap, Route, Search, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
 import MapView from './components/MapView'
 import { searchStationsAlongRoute, searchGooglePlaces } from './googleMaps'
@@ -89,6 +89,97 @@ function Welcome({onStart,onRoute}){return <main className="welcome min-h-screen
     </footer>
   </div>
 </main>}
+function LocationGate({onSuccess,onBack}) {
+  const [loading,setLoading]=useState(false)
+  const [error,setError]=useState('')
+  const requestRef=useRef(null)
+  const requestIdRef=useRef(0)
+
+  const requestLocation=()=>{
+    if(!navigator.geolocation){setLoading(false);setError('unsupported');return}
+    const requestId=++requestIdRef.current
+    setLoading(true);setError('')
+    try{
+      navigator.geolocation.getCurrentPosition(position=>{
+        if(requestId!==requestIdRef.current)return
+        const {latitude:lat,longitude:lng,accuracy}=position.coords||{}
+        if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180){
+          setLoading(false);setError('unavailable');return
+        }
+        onSuccess({lat,lng,accuracy:Number.isFinite(accuracy)?Math.max(0,accuracy):0})
+      },err=>{
+        if(requestId!==requestIdRef.current)return
+        setLoading(false)
+        setError(err?.code===1?'denied':err?.code===2?'unavailable':err?.code===3?'timeout':'unavailable')
+      },{enableHighAccuracy:true,timeout:20000,maximumAge:0})
+    }catch{
+      if(requestId!==requestIdRef.current)return
+      setLoading(false);setError('unavailable')
+    }
+  }
+  requestRef.current=requestLocation
+
+  useEffect(()=>{
+    let active=true
+    if(!navigator.geolocation){setError('unsupported');return()=>{active=false}}
+    if(navigator.permissions?.query){
+      navigator.permissions.query({name:'geolocation'}).then(permission=>{
+        if(!active)return
+        if(permission.state==='granted')requestRef.current?.()
+        else if(permission.state==='denied')setError('denied')
+      }).catch(()=>{})
+    }
+    return()=>{active=false;requestIdRef.current++}
+  },[])
+
+  const errorCopy={
+    denied:{
+      title:'Location permission is blocked',
+      body:'Allow location for this site from the lock or site-controls icon beside the address bar. Choose Location → Allow, then try again.',
+    },
+    unavailable:{
+      title:'Your position is unavailable',
+      body:'Check that device location services are on and that you have a clear GPS or network signal, then try again.',
+    },
+    timeout:{
+      title:'Location request timed out',
+      body:'We couldn’t get a GPS fix in time. Check your signal or device location settings, then try again.',
+    },
+    unsupported:{
+      title:'Location isn’t supported here',
+      body:'Use a browser and secure connection that support location services, then reload SmartRoute.',
+    },
+  }[error]
+
+  return <main className="welcome relative grid min-h-[100dvh] place-items-center overflow-hidden px-5 py-8 text-white">
+    <div className="pointer-events-none absolute inset-0 bg-grid opacity-30"/>
+    <header className="absolute left-5 right-5 top-5 z-10 mx-auto flex max-w-6xl items-center gap-3 sm:left-8 sm:right-8">
+      <img src="/favicon.svg" alt="" className="h-10 w-10 object-contain [filter:drop-shadow(0_0_12px_rgba(32,214,154,0.35))]"/>
+      <div><div className="text-lg font-black tracking-tight">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[9px] uppercase tracking-[.22em] text-slate-500">Cambodia trip planner</div></div>
+    </header>
+    <section className="relative w-full max-w-lg pt-14">
+      <Panel className="p-6 text-center shadow-2xl sm:p-9">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-emeraldx/20 bg-emeraldx/10 text-emeraldx shadow-glow"><MapPin size={25}/></div>
+        <div className="mt-5 text-[10px] font-bold uppercase tracking-[.2em] text-emeraldx">Location access · required to continue</div>
+        <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Enable your location to start</h1>
+        <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-300">SmartRoute uses your live location to find your starting point and center your trip map for route and cost planning.</p>
+
+        {errorCopy&&<div role="alert" className="mt-6 rounded-xl border border-amberx/20 bg-amberx/5 p-4 text-left">
+          <div className="flex items-start gap-3"><ShieldAlert size={17} className="mt-0.5 shrink-0 text-amberx"/><div><div className="text-xs font-bold text-amberx">{errorCopy.title}</div><p className="mt-1 text-xs leading-5 text-slate-300">{errorCopy.body}</p></div></div>
+          <button onClick={requestLocation} disabled={loading} className="mt-3 ml-7 text-xs font-bold text-emeraldx underline decoration-emeraldx/40 underline-offset-4 hover:text-emerald-300 disabled:opacity-50">Try Again</button>
+        </div>}
+
+        {loading&&<div role="status" className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-400"><LocateFixed size={15} className="animate-pulse text-emeraldx"/>Finding your location…</div>}
+        <button onClick={requestLocation} disabled={loading} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-emeraldx px-5 py-4 text-sm font-extrabold text-ink shadow-glow transition hover:bg-emerald-300 disabled:cursor-wait disabled:opacity-65">
+          <LocateFixed size={17} className={loading?'animate-pulse':''}/>{loading?'Locating…':'Allow Location & Continue'}
+        </button>
+        <button onClick={onBack} className="mt-5 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-400 transition hover:text-white"><ArrowLeft size={14}/>Back to SmartRoute</button>
+        <p className="mt-4 text-[10px] leading-4 text-slate-500">Location is used to show your position on the trip map. You can change browser permissions any time.</p>
+      </Panel>
+      <div className="mt-5 text-center text-[10px] text-slate-500">Plan ahead. Arrive prepared.</div>
+    </section>
+  </main>
+}
 function Setup({onBack,onGenerate,config,setConfig}) {
   const [vehicleSearch,setVehicleSearch]=useState('')
   const group=vehicleGroups.find(g=>g.id===config.category)
@@ -112,10 +203,10 @@ function Setup({onBack,onGenerate,config,setConfig}) {
       <div className="space-y-4"><Panel className="p-5"><div className="mb-3 flex items-center gap-2 text-emeraldx"><Gauge size={18}/><b>Range snapshot</b></div><div className="text-4xl font-black">{config.capacity>0&&config.consumption>0?Math.round(config.capacity*config.level/100/(config.consumption/100)):'—'}<span className="ml-1 text-base font-semibold text-slate-400">km</span></div><p className="mt-2 text-xs leading-5 text-slate-400">Estimated remaining range at {config.level}% based on the entered consumption rate. Actual range varies with speed, load, terrain and weather.</p></Panel><Panel className="p-5"><div className="mb-3 flex items-center gap-2 text-amberx"><Info size={18}/><b>Before you hit the road</b></div><ul className="space-y-3 text-xs leading-5 text-slate-400"><li className="flex gap-2"><Check size={15} className="shrink-0 text-emeraldx"/> Verify your actual fuel or battery capacity.</li><li className="flex gap-2"><Check size={15} className="shrink-0 text-emeraldx"/> Keep a safety buffer for traffic and detours.</li><li className="flex gap-2"><Check size={15} className="shrink-0 text-emeraldx"/> Check station status before relying on a charger.</li></ul></Panel><div className="rounded-xl border border-white/10 p-4 text-xs leading-5 text-slate-500">Demo defaults are estimates, not certified manufacturer test figures. You can customize your consumption and rates later.</div></div>
     </div></div></div>
 }
-function TripPlanner({config,onChangeVehicle}) {
-  const [originName,setOriginName]=useState('')
+function TripPlanner({config,onChangeVehicle,initialLocation}) {
+  const [originName,setOriginName]=useState(initialLocation?'Current location':'')
   const [destinationName,setDestinationName]=useState('')
-  const [origin,setOrigin]=useState(null)
+  const [origin,setOrigin]=useState(()=>initialLocation?{lat:initialLocation.lat,lng:initialLocation.lng,name:'Current location'}:null)
   const [destination,setDestination]=useState(null)
   const [route,setRoute]=useState([])
   const [distance,setDistance]=useState(0)
@@ -264,7 +355,7 @@ function TripPlanner({config,onChangeVehicle}) {
         {stationFinderPanel}
         <div className="rounded-xl border border-white/10 bg-ink/85 p-3 text-[10px] leading-4 text-slate-400 backdrop-blur"><Info size={13} className="mb-1 text-amberx"/> Route and travel time from OSRM are estimates. Use “Pin (choose on map)” under origin or destination to place a custom pin.</div></>
   return <div className="relative h-[100dvh] min-h-[480px] w-full overflow-hidden bg-slate-950 text-white lg:min-h-[720px]">
-    <div className={cx('absolute inset-0',mapClickMode&&'pick-mode')}><MapView origin={origin} destination={destination} route={routePoints} stations={googleStations??[]} filter={filter} onMapClick={handleMapClick} rangePoint={rangePoint}/></div>
+    <div className={cx('absolute inset-0',mapClickMode&&'pick-mode')}><MapView origin={origin} destination={destination} route={routePoints} stations={googleStations??[]} filter={filter} onMapClick={handleMapClick} rangePoint={rangePoint} initialLocation={initialLocation}/></div>
     <div className="pointer-events-none absolute inset-0 z-[400] bg-gradient-to-r from-ink/35 via-transparent to-transparent"/>
     <div className="pointer-events-none absolute left-1 top-4 z-[500] flex items-center gap-2"><button onClick={onChangeVehicle} aria-label="Back to vehicle profile" className="pointer-events-auto flex h-[52px] items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 text-xs font-bold shadow-xl backdrop-blur transition hover:border-emeraldx/50 hover:text-emeraldx"><ArrowLeft size={16}/> Back</button><div className="flex items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 py-2 shadow-xl backdrop-blur"><img src="/favicon.svg" alt="SmartRoute AI logo" className="h-8 w-8 object-contain"/><div className="hidden sm:block"><div className="text-sm font-black">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[9px] uppercase tracking-widest text-slate-500">Cambodia trip planner</div></div></div></div>
     <div className="pointer-events-none absolute right-1 top-4 z-[500] flex gap-2 lg:hidden"><button onClick={()=>setShowLeft(x=>!x)} aria-label={showLeft?'Hide menu and show map':'Show menu'} className="pointer-events-auto flex h-[52px] items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 text-xs font-bold shadow-xl backdrop-blur hover:border-emeraldx/50">{showLeft?<><MapIcon size={16}/> Map</>:<><Route size={16}/> Plan</>}</button></div>
@@ -307,7 +398,7 @@ function TripPlanner({config,onChangeVehicle}) {
     {routeError&&<div className="absolute left-2 right-2 top-[76px] z-[600] max-w-xs lg:left-auto lg:bottom-4 lg:right-4 lg:top-auto rounded-xl border border-amberx/30 bg-ink/95 p-3 text-[10px] text-amberx shadow-xl">OSRM could not be reached. Showing a straight-line distance estimate with a road-distance factor.</div>}
   </div>
 }
-const paths=['/','/vehicle','/route']
+const paths=['/','/vehicle','/location','/route']
 const defaultVehicleConfig={category:'',model:'',modified:false,energy:'',capacity:'',consumption:'',level:100,customName:''}
 const loadVehicleConfig=()=>{
   try{return {...defaultVehicleConfig,...JSON.parse(localStorage.getItem('smartroute-vehicle-config')||'{}')}}
@@ -321,6 +412,12 @@ const stepFromPath=()=>{
 export default function App(){
   const [step,setStepState]=useState(stepFromPath)
   const [config,setConfig]=useState(loadVehicleConfig)
+  const [initialLocation,setInitialLocation]=useState(null)
+  const hasVehicleConfig=config.capacity>0&&config.consumption>0
+  const initialPathStep=stepFromPath()
+  const initialHasVehicle=(()=>{const saved=loadVehicleConfig();return saved.capacity>0&&saved.consumption>0})()
+  const [gateDestination,setGateDestination]=useState(()=>initialPathStep===3&&initialHasVehicle?3:1)
+  const [gateBackStep,setGateBackStep]=useState(()=>initialPathStep===3&&initialHasVehicle?1:0)
   const setStep=next=>{
     const target=paths[next]
     if(window.location.pathname!==target)window.history.pushState({step:next},'',target)
@@ -339,12 +436,46 @@ export default function App(){
     try{localStorage.setItem('smartroute-vehicle-config',JSON.stringify(config))}catch{}
   },[config])
   useEffect(()=>{
-    // /route needs a vehicle: send direct visits back to the vehicle profile
-    if(step===2&&!(config.capacity>0&&config.consumption>0)){window.history.replaceState({step:1},'','/vehicle');setStepState(1)}
-  },[step,config.capacity,config.consumption])
+    // A direct /route visit must pass through location before the map can render.
+    if(step!==3)return
+    if(!initialLocation){
+      setGateDestination(hasVehicleConfig?3:1)
+      setGateBackStep(hasVehicleConfig?1:0)
+      if(window.location.pathname!=='/location')window.history.replaceState({step:2},'','/location')
+      setStepState(2)
+    }else if(!hasVehicleConfig){
+      if(window.location.pathname!=='/vehicle')window.history.replaceState({step:1},'','/vehicle')
+      setStepState(1)
+    }
+  },[step,initialLocation,hasVehicleConfig])
   useEffect(()=>{
-    const titles=['SmartRoute AI — Cambodia Trip Planner','Vehicle profile · SmartRoute AI','Map & Route · SmartRoute AI']
-    document.title=titles[step]
-  },[step])
-  return step===0?<Welcome onStart={()=>setStep(1)} onRoute={()=>setStep(2)}/>:step===1?<Setup onBack={()=>setStep(0)} onGenerate={()=>setStep(2)} config={config} setConfig={setConfig}/>:<TripPlanner config={config} onChangeVehicle={()=>setStep(1)}/>
+    const titles=['SmartRoute AI — Cambodia Trip Planner','Vehicle profile · SmartRoute AI','Location access · SmartRoute AI','Map & Route · SmartRoute AI']
+    const visibleStep=step===3&&!initialLocation?2:step
+    document.title=titles[visibleStep]||titles[0]
+  },[step,initialLocation])
+
+  const goToMap=(backStep=1)=>{
+    if(!hasVehicleConfig){
+      if(initialLocation){setStep(1);return}
+      setGateDestination(1);setGateBackStep(backStep);setStep(2);return
+    }
+    if(initialLocation){setStep(3);return}
+    setGateDestination(3);setGateBackStep(backStep);setStep(2)
+  }
+  const startSmartRoute=()=>{
+    if(initialLocation){setStep(hasVehicleConfig?3:1);return}
+    setGateDestination(hasVehicleConfig?3:1);setGateBackStep(0);setStep(2)
+  }
+  const finishLocation=location=>{
+    setInitialLocation(location)
+    setStep(gateDestination)
+  }
+  const visibleStep=step===3&&!initialLocation?2:step
+  return visibleStep===0
+    ?<Welcome onStart={startSmartRoute} onRoute={()=>goToMap(0)}/>
+    :visibleStep===1
+      ?<Setup onBack={()=>setStep(0)} onGenerate={()=>goToMap(1)} config={config} setConfig={setConfig}/>
+      :visibleStep===2
+        ?<LocationGate onSuccess={finishLocation} onBack={()=>setStep(gateBackStep)}/>
+        :<TripPlanner config={config} initialLocation={initialLocation} onChangeVehicle={()=>setStep(1)}/>
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { LocateFixed } from 'lucide-react'
 import { googleMapsKey, loadGoogleMaps } from '../googleMaps'
 
-export default function MapView({ origin, destination, route, stations = [], filter, onMapClick, rangePoint }) {
+export default function MapView({ origin, destination, route, stations = [], filter, onMapClick, rangePoint, initialLocation }) {
   const host = useRef(null)
   const map = useRef(null)
   const clickRef = useRef(onMapClick)
@@ -209,15 +209,28 @@ export default function MapView({ origin, destination, route, stations = [], fil
 
     const options = { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
     const geolocation = typeof navigator !== 'undefined' ? navigator.geolocation : null
+    if (initialLocation) updateLocation({
+      coords: {
+        latitude: initialLocation.lat,
+        longitude: initialLocation.lng,
+        accuracy: initialLocation.accuracy,
+      },
+    }, true)
     if (!geolocation) {
-      setLocationMessage('Location is not supported by this browser.')
+      if (!initialLocation) setLocationMessage('Location is not supported by this browser.')
     } else {
-      setLocating(true)
+      if (!initialLocation) {
+        setLocating(true)
+        try {
+          geolocation.getCurrentPosition(position => updateLocation(position), onLocationError, options)
+        } catch {
+          onLocationError(null)
+        }
+      }
       try {
-        geolocation.getCurrentPosition(position => updateLocation(position), onLocationError, options)
         watchId = geolocation.watchPosition(position => updateLocation(position), onLocationError, options)
       } catch {
-        onLocationError(null)
+        if (!initialLocation) onLocationError(null)
       }
     }
 
@@ -253,7 +266,7 @@ export default function MapView({ origin, destination, route, stations = [], fil
       interactionEvents.forEach(type => host.current?.removeEventListener(type, markUserInteraction))
       recenterRef.current = null
     }
-  }, [status])
+  }, [status, initialLocation])
 
   return <div className="google-map relative h-full w-full">
     <div ref={host} className="h-full w-full" />
