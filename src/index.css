@@ -13,12 +13,6 @@ button{cursor:pointer}
 .field:focus{border-color:#20d69a;box-shadow:0 0 0 3px rgba(32,214,154,.1)}
 .field option{background:#0d1e19}
 .map-art{background:radial-gradient(ellipse at 50% 50%,#12372b,#0a1a15 70%)}
-.leaflet-container{height:100%;width:100%;background:#dbe8e0;font-family:inherit}
-.leaflet-control-attribution{font-size:9px!important}
-.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0d1e19;color:#e2e8f0}
-.leaflet-popup-content{font-size:12px;line-height:1.6}
-.leaflet-popup-content small{color:#94a3b8}
-.custom-pin{background:transparent;border:0}
 input[type=range]{height:5px;cursor:pointer}
-@media(max-width:640px){.field{font-size:16px}.leaflet-control-zoom{display:none}.leaflet-control-attribution{max-width:65vw}}
-.pick-mode .leaflet-container,.pick-mode .leaflet-grab,.pick-mode .leaflet-interactive{cursor:crosshair!important}
+@media(max-width:640px){.field{font-size:16px}}
+.pick-mode .google-map{cursor:crosshair}

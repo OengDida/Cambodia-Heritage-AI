@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Fuel, Gauge, Github, Info, LocateFixed, Leaf, Map as MapIcon, MapPin, Navigation, PlugZap, Route, Search, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
 import MapView from './components/MapView'
+import { searchGasStationsAlongRoute, searchGooglePlaces } from './googleMaps'
 import { vehicleGroups } from './data/vehicles'
 import { provinces, stations } from './data/places'
 import { defaultRates } from './data/rates'
@@ -19,18 +20,18 @@ function PlaceSearch({label,value,placeholder,onPick,action}){
   const [open,setOpen]=useState(false)
   const [found,setFound]=useState([])
   const [status,setStatus]=useState('idle')
+  const [searchError,setSearchError]=useState('')
   const [searched,setSearched]=useState('')
   const term=q.trim()
   const search=async()=>{
     if(term.length<2||status==='loading')return
     setStatus('loading')
     try{
-      const res=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=kh&accept-language=en&q=${encodeURIComponent(term)}`)
-      if(!res.ok)throw new Error('Search failed')
-      const data=await res.json()
-      setFound(data.map(r=>({name:r.name||r.display_name.split(',')[0],detail:r.display_name,lat:Number(r.lat),lng:Number(r.lon)})))
+      const data=await searchGooglePlaces(term)
+      setFound(data)
+      setSearchError('')
       setSearched(term);setStatus('done')
-    }catch{setStatus('error')}
+    }catch(error){setSearchError(error?.message||'Google Places request failed.');setStatus('error')}
   }
   const pick=p=>{onPick(p);setOpen(false);setQ('');setFound([]);setSearched('');setStatus('idle')}
   const showFound=status==='done'&&searched===term
@@ -40,11 +41,11 @@ function PlaceSearch({label,value,placeholder,onPick,action}){
     <div className="flex gap-2"><div className="relative min-w-0 flex-1"><Search size={15} className="pointer-events-none absolute left-3 top-3.5 text-slate-400"/><input className="field w-full !pl-9" value={open?q:value} placeholder={open&&value?value:placeholder} onFocus={()=>{setOpen(true);setQ('')}} onBlur={()=>setOpen(false)} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();search()}else if(e.key==='Escape')e.target.blur()}} autoComplete="off"/></div>{action}</div>
     {open&&<div onMouseDown={e=>e.preventDefault()} className="max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-black/30 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {term.length>=2&&!showFound&&<button onClick={search} disabled={status==='loading'} className={cx(item,'font-bold text-emeraldx')}>{status==='loading'?'Searching…':`Search all places for “${term}”`}</button>}
-      {showFound&&found.length>0&&<div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Places in Cambodia</div>}
+      {showFound&&found.length>0&&<div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Google Maps places in Cambodia</div>}
       {showFound&&found.map((f,i)=><button key={i} onClick={()=>pick(f)} className={item}><div className="font-semibold">{f.name}</div><div className="mt-0.5 truncate text-[10px] text-slate-500">{f.detail}</div></button>)}
       {showFound&&!found.length&&<div className="px-3 py-3 text-[11px] text-slate-400">No places found. Try a different spelling or a nearby town.</div>}
-      {status==='error'&&<div className="px-3 py-3 text-[11px] text-rose-300">Place search is unavailable. Check your connection and try again.</div>}
-      {term.length<2&&<div className="px-3 py-2 text-[10px] text-slate-500">Type a town, road, hotel or landmark, then press Enter.</div>}
+      {status==='error'&&<div className="px-3 py-3 text-[11px] leading-5 text-rose-300">Google Places search failed: {searchError} Check that Places API (New) is enabled for this key and that the key allows this website referrer.</div>}
+      {term.length<2&&<div className="px-3 py-2 text-[10px] text-slate-500">Search Google Maps for a town, business, road, hotel or landmark.</div>}
     </div>}
   </div>
 }
@@ -75,7 +76,7 @@ function Welcome({onStart,onRoute}){return <main className="welcome min-h-screen
         <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4">
           <FooterCol title="Planner"><FLink href="/vehicle" onClick={onStart}>Launch SmartRoute AI</FLink><FLink href="/vehicle" onClick={onStart}>Vehicle profile</FLink><FLink href="/route" onClick={onRoute}>Map &amp; route</FLink></FooterCol>
           <FooterCol title="Powertrains"><FText>Electric</FText><FText>Hybrid</FText><FText>Gasoline</FText><FText>Diesel</FText><FText>Motorbike</FText></FooterCol>
-          <FooterCol title="Data &amp; maps"><FLink href="https://www.openstreetmap.org" external>OpenStreetMap</FLink><FLink href="https://project-osrm.org" external>OSRM routing</FLink><FLink href="https://leafletjs.com" external>Leaflet</FLink><FLink href={repo+'/blob/main/src/data/places.js'} external>Station data</FLink></FooterCol>
+          <FooterCol title="Data &amp; maps"><FLink href="https://developers.google.com/maps/documentation/javascript" external>Google Maps &amp; Places</FLink><FLink href="https://project-osrm.org" external>OSRM routing</FLink><FLink href={repo+'/blob/main/src/data/places.js'} external>Station data</FLink></FooterCol>
           <FooterCol title="Project"><FLink href={repo} external>GitHub</FLink><FLink href={repo+'/issues'} external>Report an issue</FLink><FLink href="/sitemap.xml" external>Sitemap</FLink></FooterCol>
         </div>
       </div>
@@ -120,6 +121,8 @@ function TripPlanner({config,onChangeVehicle}) {
   const [mapClickMode,setMapClickMode]=useState(null)
   const [routeError,setRouteError]=useState(false)
   const [showStations,setShowStations]=useState(false)
+  const [googleStations,setGoogleStations]=useState(null)
+  const [stationSearch,setStationSearch]=useState({status:'idle',progress:0,total:0,count:0,error:'',failedAreas:0})
   const [locating,setLocating]=useState(false)
   const [showLeft,setShowLeft]=useState(true)
   const [showRight,setShowRight]=useState(true)
@@ -136,6 +139,17 @@ function TripPlanner({config,onChangeVehicle}) {
     return p?{lat:p[1],lng:p[0]}:null
   },[route,distance,currentRange])
   const alongStations=useMemo(()=>stations.map(s=>({...s,routeMeta:nearestOnRoute(s,route)})).filter(s=>s.routeMeta.along<distance+1).sort((a,b)=>a.routeMeta.along-b.routeMeta.along),[route,distance])
+  const findRouteGasStations=async()=>{
+    setFilter('gas');setShowStations(true);setGoogleStations([])
+    setStationSearch({status:'loading',progress:0,total:0,count:0,error:'',failedAreas:0})
+    try{
+      const result=await searchGasStationsAlongRoute(routePoints,(progress,total,count)=>setStationSearch(s=>({...s,progress,total,count})))
+      setGoogleStations(result.places)
+      setStationSearch({status:'done',progress:result.sampleCount,total:result.sampleCount,count:result.places.length,error:'',failedAreas:result.failedAreas})
+    }catch(error){
+      setStationSearch(s=>({...s,status:'error',error:error?.message||'Google Places request failed.'}))
+    }
+  }
   const suitable=alongStations.filter(s=>isEV?s.type!=='gas_only':s.type!=='ev_only')
   const recommended=suitable.filter(s=>s.routeMeta.along>0&&s.routeMeta.along<Math.min(distance,currentRange*0.85+15)).slice(0,3)
   const need=distance*consumption/100
@@ -148,6 +162,8 @@ function TripPlanner({config,onChangeVehicle}) {
   const routePoints=route.length?route:[]
   const calculate=async(a=origin,b=destination)=>{
     if(!a||!b)return
+    setGoogleStations(null)
+    setStationSearch({status:'idle',progress:0,total:0,count:0,error:'',failedAreas:0})
     setRouteStatus('Calculating route…');setRouteError(false)
     try{
       const url=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`
@@ -218,7 +234,7 @@ function TripPlanner({config,onChangeVehicle}) {
         <Panel className="p-4"><div className="mb-3 text-xs font-extrabold">Pit-stop itinerary</div><div className="space-y-3"><div className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-emeraldx"/><div><b className="text-xs">{origin?origin.name:'Choose origin'}</b><div className="text-[10px] text-slate-500">Start journey</div></div></div>{recommended.map(s=><div key={s.id} className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-300"/><div><b className="text-xs">{s.name}</b><div className="text-[10px] text-slate-500">Approx. route progress · {s.road}</div></div></div>)}{lowRange&&!recommended.length&&<div className="rounded-lg bg-rose-400/10 p-2 text-[10px] text-rose-200">No compatible stop confidently identified. Plan an alternate stop.</div>}<div className="flex gap-3"><div className="mt-1 h-2.5 w-2.5 rounded-full bg-amberx"/><div><b className="text-xs">{destination?destination.name:'Choose destination'}</b><div className="text-[10px] text-slate-500">Destination</div></div></div></div></Panel>
         <div className="rounded-xl border border-white/10 bg-ink/85 p-3 text-[10px] leading-4 text-slate-400 backdrop-blur"><Info size={13} className="mb-1 text-amberx"/> Route and travel time from OSRM are estimates. Use “Pin (choose on map)” under origin or destination to place a custom pin.</div></>
   return <div className="relative h-[100dvh] min-h-[480px] w-full overflow-hidden bg-slate-950 text-white lg:min-h-[720px]">
-    <div className={cx('absolute inset-0',mapClickMode&&'pick-mode')}><MapView origin={origin} destination={destination} route={routePoints} stations={stations} filter={filter} onMapClick={handleMapClick} rangePoint={rangePoint}/></div>
+    <div className={cx('absolute inset-0',mapClickMode&&'pick-mode')}><MapView origin={origin} destination={destination} route={routePoints} stations={googleStations??stations} filter={filter} onMapClick={handleMapClick} rangePoint={rangePoint}/></div>
     <div className="pointer-events-none absolute inset-0 z-[400] bg-gradient-to-r from-ink/35 via-transparent to-transparent"/>
     <div className="pointer-events-none absolute left-1 top-4 z-[500] flex items-center gap-2"><button onClick={onChangeVehicle} aria-label="Back to vehicle profile" className="pointer-events-auto flex h-[52px] items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 text-xs font-bold shadow-xl backdrop-blur transition hover:border-emeraldx/50 hover:text-emeraldx"><ArrowLeft size={16}/> Back</button><div className="flex items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 py-2 shadow-xl backdrop-blur"><img src="/favicon.svg" alt="SmartRoute AI logo" className="h-8 w-8 object-contain"/><div className="hidden sm:block"><div className="text-sm font-black">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[9px] uppercase tracking-widest text-slate-500">Cambodia trip planner</div></div></div></div>
     <div className="pointer-events-none absolute right-1 top-4 z-[500] flex gap-2 lg:hidden"><button onClick={()=>setShowLeft(x=>!x)} aria-label={showLeft?'Hide menu and show map':'Show menu'} className="pointer-events-auto flex h-[52px] items-center gap-2 rounded-xl border border-white/10 bg-ink/90 px-3 text-xs font-bold shadow-xl backdrop-blur hover:border-emeraldx/50">{showLeft?<><MapIcon size={16}/> Map</>:<><Route size={16}/> Plan</>}</button></div>
@@ -253,8 +269,12 @@ function TripPlanner({config,onChangeVehicle}) {
         <Panel className="p-4">
           <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2 text-sm font-extrabold"><MapPin size={16} className="text-emeraldx"/> Station finder</div><button onClick={()=>setShowStations(x=>!x)} className="text-[10px] font-bold text-emeraldx">{showStations?'Hide list':'View stations'}</button></div>
           <div className="flex flex-wrap gap-1.5">{[['all','All Stations'],['ev','EV Chargers'],['gas','Gas Pumps'],['hybrid','Hybrid Hubs']].map(([id,l])=><Pill key={id} active={filter===id} onClick={()=>setFilter(id)}>{l}</Pill>)}</div>
-          {showStations&&<div className="mt-3 max-h-64 space-y-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{alongStations.filter(s=>filter==='all'||(filter==='ev'&&s.type!=='gas_only')||(filter==='gas'&&s.type!=='ev_only')||(filter==='hybrid'&&s.type==='hybrid_hub')).map(s=><div key={s.id} className="rounded-lg bg-black/20 p-3"><div className="flex justify-between gap-2"><b className="text-[11px]">{s.name}</b><span className="text-[9px] text-emeraldx">{s.road}</span></div><div className="mt-1 text-[10px] text-slate-500">{s.brand} · {s.hours} · {s.connectors.join(', ')||'Fuel'}</div></div>)}</div>}
-          <div className="mt-3 text-[9px] leading-4 text-slate-500">Map pins are a mix of public EV-map references and illustrative fuel-hub points. Corridor distance is approximate; verify location, hours, connector and live availability before relying on a stop.</div>
+          <button onClick={findRouteGasStations} disabled={stationSearch.status==='loading'||routePoints.length<2} className="mt-3 flex w-full items-center justify-center rounded-xl bg-emeraldx py-2.5 text-xs font-extrabold text-ink hover:bg-emerald-300 disabled:opacity-60">{stationSearch.status==='loading'?`Searching ${stationSearch.progress}/${stationSearch.total} route areas…`:'Find gas stations along this route'}</button>
+          {stationSearch.status==='loading'&&<div className="mt-2 text-[10px] text-slate-400">Searching Google Places within 25 km of points along the route. Found {stationSearch.count} so far…</div>}
+          {stationSearch.status==='error'&&<div className="mt-2 rounded-lg bg-rose-400/10 p-2 text-[10px] leading-4 text-rose-200">Google Places search failed: {stationSearch.error} Confirm Places API (New) is enabled and the key is allowed to use it.</div>}
+          {stationSearch.status==='done'&&<div className="mt-2 text-[10px] leading-4 text-slate-400">Found {stationSearch.count} unique Google Places results{stationSearch.failedAreas?`; ${stationSearch.failedAreas} route-area searches failed`:''}. Each route area returns up to 20 matches, so this may miss stations, especially in dense areas.</div>}
+          {showStations&&<div className="mt-3 max-h-64 space-y-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{googleStations===null?alongStations.filter(s=>filter==='all'||(filter==='ev'&&s.type!=='gas_only')||(filter==='gas'&&s.type!=='ev_only')||(filter==='hybrid'&&s.type==='hybrid_hub')).map(s=><div key={s.id} className="rounded-lg bg-black/20 p-3"><div className="flex justify-between gap-2"><b className="text-[11px]">{s.name}</b><span className="text-[9px] text-emeraldx">{s.road}</span></div><div className="mt-1 text-[10px] text-slate-500">{s.brand} · {s.hours} · {s.connectors.join(', ')||'Fuel'}</div></div>):googleStations.map(s=><div key={s.id} className="rounded-lg bg-black/20 p-3"><div className="flex justify-between gap-2"><b className="text-[11px]">{s.name}</b>{s.status==='CLOSED_PERMANENTLY'&&<span className="text-[9px] text-rose-300">Permanently closed</span>}</div><div className="mt-1 text-[10px] text-slate-400">{s.detail||'Address not provided'}</div><a className="mt-1 inline-block text-[10px] font-bold text-emeraldx hover:underline" href={s.mapsUrl} target="_blank" rel="noopener noreferrer">View on Google Maps ↗</a></div>)}</div>}
+          <div className="mt-3 text-[9px] leading-4 text-slate-500">Google Places searches a 25 km corridor around sampled points on the current route. Listings may be incomplete or out of date, and each request is limited to 20 results. Check station details on Google Maps. Searches may incur Google Maps Platform charges.</div>
         </Panel>
       <div className="flex flex-col gap-3 lg:hidden">{sidePanels}</div></div></div>
       <div className={cx('pointer-events-auto ml-auto hidden max-h-full w-[290px] flex-col gap-3 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',showRight&&'lg:flex')}>{sidePanels}
