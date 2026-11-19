@@ -76,7 +76,7 @@ export default function MapView({ origin, destination, route, onMapClick, rangeP
       instance.fitBounds(bounds, { left: 430, right: 320, top: 90, bottom: 80 })
     } else if (points.length === 1) instance.panTo({ lat: points[0].lat, lng: points[0].lng })
     return () => { markers.forEach(marker => marker.setMap(null)); line?.setMap(null) }
-  }, [origin, destination, route, stations, filter, rangePoint, status])
+  }, [origin, destination, route, rangePoint, status])
 
   return <div className="google-map relative h-full w-full">
     <div ref={host} className="h-full w-full" />
