@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Fuel, Gauge, Github, Info, LocateFixed, Leaf, Map as MapIcon, MapPin, Navigation, PlugZap, Route, Search, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
 import MapView from './components/MapView'
-import { searchGasStationsAlongRoute, searchGooglePlaces } from './googleMaps'
+import { searchStationsAlongRoute, searchGooglePlaces } from './googleMaps'
 import { vehicleGroups } from './data/vehicles'
 import { provinces, stations } from './data/places'
 import { defaultRates } from './data/rates'
@@ -11,6 +11,11 @@ const cx=(...x)=>x.filter(Boolean).join(' ')
 const fmtTime=m=>`${Math.floor(m/60)}h ${Math.round(m%60)}m`
 const categoryIcons={ev:Zap,hybrid:Leaf,gasoline:CarFront,diesel:Truck,motorbike:Bike}
 const kmLine=(a,b)=>haversine(a,b)
+const stationFilters=[['all','All Stations'],['ev','EV Chargers'],['gas','Gas Pumps'],['hybrid','Hybrid Hubs']]
+const filterLabel=id=>stationFilters.find(f=>f[0]===id)?.[1]||'Stations'
+const searchLabel={all:'Find stations along this route',ev:'Find EV chargers along this route',gas:'Find gas stations along this route',hybrid:'Find hybrid hubs along this route'}
+const matchesFilter=(s,f)=>f==='all'||(f==='ev'&&s.type!=='gas_only')||(f==='gas'&&s.type!=='ev_only')||(f==='hybrid'&&s.type==='hybrid_hub')
+const typeBadge={ev_only:['EV','text-blue-300'],gas_only:['Gas','text-amberx'],hybrid_hub:['Hybrid hub','text-violet-300']}
 function Panel({children,className=''}){return <div className={cx('glass rounded-2xl border border-white/10 shadow-2xl',className)}>{children}</div>}
 function Pill({children,active,onClick}){return <button onClick={onClick} className={cx('rounded-full px-3 py-2 text-xs font-semibold transition',active?'bg-emeraldx text-ink':'bg-white/5 text-slate-300 hover:bg-white/10')}>{children}</button>}
 function Field({label,children}){return <label className="block space-y-2"><span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>{children}</label>}
@@ -122,6 +127,7 @@ function TripPlanner({config,onChangeVehicle}) {
   const [routeError,setRouteError]=useState(false)
   const [showStations,setShowStations]=useState(false)
   const [googleStations,setGoogleStations]=useState(null)
+  const [searchedFilter,setSearchedFilter]=useState('all')
   const [stationSearch,setStationSearch]=useState({status:'idle',progress:0,total:0,count:0,error:'',failedAreas:0})
   const [locating,setLocating]=useState(false)
   const [showLeft,setShowLeft]=useState(true)
@@ -139,11 +145,11 @@ function TripPlanner({config,onChangeVehicle}) {
     return p?{lat:p[1],lng:p[0]}:null
   },[route,distance,currentRange])
   const alongStations=useMemo(()=>stations.map(s=>({...s,routeMeta:nearestOnRoute(s,route)})).filter(s=>s.routeMeta.along<distance+1).sort((a,b)=>a.routeMeta.along-b.routeMeta.along),[route,distance])
-  const findRouteGasStations=async()=>{
-    setFilter('gas');setShowStations(true);setGoogleStations([])
+  const findRouteStations=async()=>{
+    setSearchedFilter(filter);setShowStations(true);setGoogleStations([])
     setStationSearch({status:'loading',progress:0,total:0,count:0,error:'',failedAreas:0})
     try{
-      const result=await searchGasStationsAlongRoute(routePoints,(progress,total,count)=>setStationSearch(s=>({...s,progress,total,count})))
+      const result=await searchStationsAlongRoute(routePoints,filter,(progress,total,count)=>setStationSearch(s=>({...s,progress,total,count})))
       setGoogleStations(result.places)
       setStationSearch({status:'done',progress:result.sampleCount,total:result.sampleCount,count:result.places.length,error:'',failedAreas:result.failedAreas})
     }catch(error){
@@ -268,13 +274,15 @@ function TripPlanner({config,onChangeVehicle}) {
         </Panel>
         <Panel className="p-4">
           <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2 text-sm font-extrabold"><MapPin size={16} className="text-emeraldx"/> Station finder</div><button onClick={()=>setShowStations(x=>!x)} className="text-[10px] font-bold text-emeraldx">{showStations?'Hide list':'View stations'}</button></div>
-          <div className="flex flex-wrap gap-1.5">{[['all','All Stations'],['ev','EV Chargers'],['gas','Gas Pumps'],['hybrid','Hybrid Hubs']].map(([id,l])=><Pill key={id} active={filter===id} onClick={()=>setFilter(id)}>{l}</Pill>)}</div>
-          <button onClick={findRouteGasStations} disabled={stationSearch.status==='loading'||routePoints.length<2} className="mt-3 flex w-full items-center justify-center rounded-xl bg-emeraldx py-2.5 text-xs font-extrabold text-ink hover:bg-emerald-300 disabled:opacity-60">{stationSearch.status==='loading'?`Searching ${stationSearch.progress}/${stationSearch.total} route areas…`:'Find gas stations along this route'}</button>
+          <div className="flex flex-wrap gap-1.5">{stationFilters.map(([id,l])=><Pill key={id} active={filter===id} onClick={()=>setFilter(id)}>{l}</Pill>)}</div>
+          <button onClick={findRouteStations} disabled={stationSearch.status==='loading'||routePoints.length<2} className="mt-3 flex w-full items-center justify-center rounded-xl bg-emeraldx py-2.5 text-xs font-extrabold text-ink hover:bg-emerald-300 disabled:opacity-60">{stationSearch.status==='loading'?`Searching ${stationSearch.progress}/${stationSearch.total} route areas…`:searchLabel[filter]}</button>
           {stationSearch.status==='loading'&&<div className="mt-2 text-[10px] text-slate-400">Searching Google Places within 25 km of points along the route. Found {stationSearch.count} so far…</div>}
           {stationSearch.status==='error'&&<div className="mt-2 rounded-lg bg-rose-400/10 p-2 text-[10px] leading-4 text-rose-200">Google Places search failed: {stationSearch.error} Confirm Places API (New) is enabled and the key is allowed to use it.</div>}
-          {stationSearch.status==='done'&&<div className="mt-2 text-[10px] leading-4 text-slate-400">Found {stationSearch.count} unique Google Places results{stationSearch.failedAreas?`; ${stationSearch.failedAreas} route-area searches failed`:''}. Each route area returns up to 20 matches, so this may miss stations, especially in dense areas.</div>}
-          {showStations&&<div className="mt-3 max-h-64 space-y-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{googleStations===null?alongStations.filter(s=>filter==='all'||(filter==='ev'&&s.type!=='gas_only')||(filter==='gas'&&s.type!=='ev_only')||(filter==='hybrid'&&s.type==='hybrid_hub')).map(s=><div key={s.id} className="rounded-lg bg-black/20 p-3"><div className="flex justify-between gap-2"><b className="text-[11px]">{s.name}</b><span className="text-[9px] text-emeraldx">{s.road}</span></div><div className="mt-1 text-[10px] text-slate-500">{s.brand} · {s.hours} · {s.connectors.join(', ')||'Fuel'}</div></div>):googleStations.map(s=><div key={s.id} className="rounded-lg bg-black/20 p-3"><div className="flex justify-between gap-2"><b className="text-[11px]">{s.name}</b>{s.status==='CLOSED_PERMANENTLY'&&<span className="text-[9px] text-rose-300">Permanently closed</span>}</div><div className="mt-1 text-[10px] text-slate-400">{s.detail||'Address not provided'}</div><a className="mt-1 inline-block text-[10px] font-bold text-emeraldx hover:underline" href={s.mapsUrl} target="_blank" rel="noopener noreferrer">View on Google Maps ↗</a></div>)}</div>}
-          <div className="mt-3 text-[9px] leading-4 text-slate-500">Google Places searches a 25 km corridor around sampled points on the current route. Listings may be incomplete or out of date, and each request is limited to 20 results. Check station details on Google Maps. Searches may incur Google Maps Platform charges.</div>
+          {stationSearch.status==='done'&&<div className="mt-2 text-[10px] leading-4 text-slate-400">Found {stationSearch.count} unique Google Places results for “{filterLabel(searchedFilter)}”{stationSearch.failedAreas?`; ${stationSearch.failedAreas} route-area searches failed`:''}. Each route area returns up to 20 matches, so this may miss stations, especially in dense areas.</div>}
+          {stationSearch.status==='done'&&googleStations&&filter!==searchedFilter&&searchedFilter!=='all'&&searchedFilter!=='hybrid'&&<div className="mt-2 rounded-lg bg-amberx/10 p-2 text-[10px] leading-4 text-amberx">Route results were fetched for “{filterLabel(searchedFilter)}”. Press the search button to load “{filterLabel(filter)}”.</div>}
+          {showStations&&<div className="mt-3 max-h-64 space-y-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{googleStations===null?alongStations.filter(s=>matchesFilter(s,filter)).map(s=><div key={s.id} className="rounded-lg bg-black/20 p-3"><div className="flex justify-between gap-2"><b className="text-[11px]">{s.name}</b><span className="text-[9px] text-emeraldx">{s.road}</span></div><div className="mt-1 text-[10px] text-slate-500">{s.brand} · {s.hours} · {s.connectors.join(', ')||'Fuel'}</div></div>)
+:googleStations.filter(s=>matchesFilter(s,filter)).map(s=><div key={s.id} className="rounded-lg bg-black/20 p-3"><div className="flex justify-between gap-2"><b className="text-[11px]">{s.name}</b><span className={cx('text-[9px] font-bold',typeBadge[s.type]?.[1])}>{typeBadge[s.type]?.[0]}</span>{s.status==='CLOSED_PERMANENTLY'&&<span className="text-[9px] text-rose-300">Permanently closed</span>}</div><div className="mt-1 text-[10px] text-slate-400">{s.detail||'Address not provided'}</div><a className="mt-1 inline-block text-[10px] font-bold text-emeraldx hover:underline" href={s.mapsUrl} target="_blank" rel="noopener noreferrer">View on Google Maps ↗</a></div>)}</div>}
+          <div className="mt-3 text-[9px] leading-4 text-slate-500">Google Places searches a 25 km corridor around sampled points on the current route for the selected category (hybrid hubs are fuel stops with a charger within about 300 m). Listings may be incomplete or out of date, and each request is limited to 20 results. Check station details on Google Maps. Searches may incur Google Maps Platform charges.</div>
         </Panel>
       <div className="flex flex-col gap-3 lg:hidden">{sidePanels}</div></div></div>
       <div className={cx('pointer-events-auto ml-auto hidden max-h-full w-[290px] flex-col gap-3 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',showRight&&'lg:flex')}>{sidePanels}
