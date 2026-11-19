@@ -153,6 +153,7 @@ export async function searchStationsAlongRoute(routeCoordinates, category = 'all
   if (!samplePoints.length) throw new Error('Choose an origin and destination and calculate a route first.')
   const found = new Map()
   let failedAreas = 0
+  let firstAreaError = ''
   const batchSize = 3
   for (let start = 0; start < samplePoints.length; start += batchSize) {
     const batch = samplePoints.slice(start, start + batchSize)
@@ -167,7 +168,11 @@ export async function searchStationsAlongRoute(routeCoordinates, category = 'all
       return places
     }))
     for (const result of results) {
-      if (result.status === 'rejected') { failedAreas++; continue }
+      if (result.status === 'rejected') {
+        failedAreas++
+        firstAreaError ||= result.reason?.message || String(result.reason || 'Unknown Google Places error')
+        continue
+      }
       for (const place of result.value) {
         if (!place.id || !place.location) continue
         const lat = place.location.lat(), lng = place.location.lng()
@@ -182,9 +187,10 @@ export async function searchStationsAlongRoute(routeCoordinates, category = 'all
     }
     onProgress(Math.min(start + batchSize, samplePoints.length), samplePoints.length, found.size)
   }
+  if (failedAreas === samplePoints.length) throw new Error(`All Google Places route searches failed: ${firstAreaError}`)
   const places = [...found.values()].filter(place => distanceToRouteKm(place, routeCoordinates) <= ROUTE_CORRIDOR_KM)
   markHybridHubs(places)
-  return { places, failedAreas, sampleCount: samplePoints.length }
+  return { places, failedAreas, sampleCount: samplePoints.length, error: firstAreaError }
 }
 
 // Backwards-compatible alias.
