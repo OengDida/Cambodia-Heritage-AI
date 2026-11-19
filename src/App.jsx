@@ -416,7 +416,6 @@ export default function App(){
   const hasVehicleConfig=config.capacity>0&&config.consumption>0
   const initialPathStep=stepFromPath()
   const initialHasVehicle=(()=>{const saved=loadVehicleConfig();return saved.capacity>0&&saved.consumption>0})()
-  const [gateDestination,setGateDestination]=useState(()=>initialPathStep===3&&initialHasVehicle?3:1)
   const [gateBackStep,setGateBackStep]=useState(()=>initialPathStep===3&&initialHasVehicle?1:0)
   const setStep=next=>{
     const target=paths[next]
@@ -439,7 +438,6 @@ export default function App(){
     // A direct /route visit must pass through location before the map can render.
     if(step!==3)return
     if(!initialLocation){
-      setGateDestination(hasVehicleConfig?3:1)
       setGateBackStep(hasVehicleConfig?1:0)
       if(window.location.pathname!=='/location')window.history.replaceState({step:2},'','/location')
       setStepState(2)
@@ -457,18 +455,19 @@ export default function App(){
   const goToMap=(backStep=1)=>{
     if(!hasVehicleConfig){
       if(initialLocation){setStep(1);return}
-      setGateDestination(1);setGateBackStep(backStep);setStep(2);return
+      setGateBackStep(backStep);setStep(2);return
     }
     if(initialLocation){setStep(3);return}
-    setGateDestination(3);setGateBackStep(backStep);setStep(2)
+    setGateBackStep(backStep);setStep(2)
   }
   const startSmartRoute=()=>{
-    if(initialLocation){setStep(hasVehicleConfig?3:1);return}
-    setGateDestination(hasVehicleConfig?3:1);setGateBackStep(0);setStep(2)
+    setGateBackStep(0)
+    if(initialLocation){setStep(1);return}
+    setStep(2)
   }
   const finishLocation=location=>{
     setInitialLocation(location)
-    setStep(gateDestination)
+    setStep(1)
   }
   const visibleStep=step===3&&!initialLocation?2:step
   return visibleStep===0
