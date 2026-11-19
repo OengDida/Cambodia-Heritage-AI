@@ -29,6 +29,10 @@ export default function MapView({ origin, destination, route, stations, filter, 
         mapTypeControl: true, streetViewControl: false, fullscreenControl: true,
         clickableIcons: false,
         styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }],
+        styles: [
+          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+          { featureType: 'transit.station.bus', stylers: [{ visibility: 'off' }] },
+        ],
       })
       instance.addListener('click', event => {
         if (event.latLng) clickRef.current?.({ lat: event.latLng.lat(), lng: event.latLng.lng() })
