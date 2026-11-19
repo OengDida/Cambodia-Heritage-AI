@@ -175,8 +175,32 @@ function TripPlanner({config,onChangeVehicle}) {
     {routeError&&<div className="absolute bottom-4 right-4 z-[600] max-w-xs rounded-xl border border-amberx/30 bg-ink/95 p-3 text-[10px] text-amberx shadow-xl">OSRM could not be reached. Showing a straight-line distance estimate with a road-distance factor.</div>}
   </div>
 }
+const paths=['/','/vehicle','/route']
+const stepFromPath=()=>{
+  const clean=window.location.pathname.replace(/\/+$/,'')||'/'
+  const i=paths.indexOf(clean)
+  return i===-1?0:i
+}
 export default function App(){
-  const [step,setStep]=useState(0)
+  const [step,setStepState]=useState(stepFromPath)
   const [config,setConfig]=useState({category:'ev',model:'atto3',modified:false,energy:'electric',capacity:60.5,consumption:14.4,level:45,customName:''})
+  const setStep=next=>{
+    const target=paths[next]
+    if(window.location.pathname!==target)window.history.pushState({step:next},'',target)
+    setStepState(next)
+    window.scrollTo(0,0)
+  }
+  useEffect(()=>{
+    // Normalise unknown paths (e.g. /foo) back to the root URL
+    const known=paths.includes(window.location.pathname.replace(/\/+$/,'')||'/')
+    if(!known)window.history.replaceState({step:0},'','/')
+    const onPop=()=>setStepState(stepFromPath())
+    window.addEventListener('popstate',onPop)
+    return ()=>window.removeEventListener('popstate',onPop)
+  },[])
+  useEffect(()=>{
+    const titles=['SmartRoute AI — Cambodia Trip Planner','Vehicle profile · SmartRoute AI','Map & Route · SmartRoute AI']
+    document.title=titles[step]
+  },[step])
   return step===0?<Welcome onStart={()=>setStep(1)}/>:step===1?<Setup onBack={()=>setStep(0)} onGenerate={()=>setStep(2)} config={config} setConfig={setConfig}/>:<TripPlanner config={config} onChangeVehicle={()=>setStep(1)}/>
 }
