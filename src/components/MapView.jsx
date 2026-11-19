@@ -65,7 +65,7 @@ export default function MapView({ origin, destination, route, stations = [], fil
         icon: { path: maps.SymbolPath.CIRCLE, scale: 10, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
       }))
     }
-    addPin(origin, `Origin: ${origin?.name || ''}`, '#20d69a', 'A')
+    if (!origin?.isCurrentLocation) addPin(origin, `Origin: ${origin?.name || ''}`, '#20d69a', 'A')
     addPin(destination, `Destination: ${destination?.name || ''}`, '#f7b84b', 'B')
     const visibleStations = stations.filter(station => filter === 'all' || (filter === 'ev' && station.type !== 'gas_only') || (filter === 'gas' && station.type !== 'ev_only') || (filter === 'hybrid' && station.type === 'hybrid_hub'))
     visibleStations.forEach(station => addPin(

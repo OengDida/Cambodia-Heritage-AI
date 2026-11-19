@@ -206,7 +206,7 @@ function Setup({onBack,onGenerate,config,setConfig}) {
 function TripPlanner({config,onChangeVehicle,initialLocation}) {
   const [originName,setOriginName]=useState(initialLocation?'Current location':'')
   const [destinationName,setDestinationName]=useState('')
-  const [origin,setOrigin]=useState(()=>initialLocation?{lat:initialLocation.lat,lng:initialLocation.lng,name:'Current location'}:null)
+  const [origin,setOrigin]=useState(()=>initialLocation?{lat:initialLocation.lat,lng:initialLocation.lng,name:'Current location',isCurrentLocation:true}:null)
   const [destination,setDestination]=useState(null)
   const [route,setRoute]=useState([])
   const [distance,setDistance]=useState(0)
@@ -316,7 +316,7 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
         const {latitude:lat,longitude:lng}=pos.coords
         const nearest=provinces.map(x=>({...x,d:kmLine(x,{lat,lng})})).sort((a,b)=>a.d-b.d)[0]
         const inCambodia=lat>=9.9&&lat<=14.8&&lng>=102.2&&lng<=107.8
-        const pin={lat,lng,name:`Current location (near ${nearest.name})`}
+        const pin={lat,lng,name:`Current location (near ${nearest.name})`,isCurrentLocation:true}
         setOrigin(pin);setOriginName('Current location');setMapClickMode(null)
         setLocNote(inCambodia?`Origin set to your location, near ${nearest.name}.`:'Your location appears to be outside Cambodia. Routes and stations may not be useful.')
         setLocating(false)
