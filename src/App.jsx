@@ -308,6 +308,11 @@ function TripPlanner({config,onChangeVehicle}) {
   </div>
 }
 const paths=['/','/vehicle','/route']
+const defaultVehicleConfig={category:'',model:'',modified:false,energy:'',capacity:'',consumption:'',level:100,customName:''}
+const loadVehicleConfig=()=>{
+  try{return {...defaultVehicleConfig,...JSON.parse(localStorage.getItem('smartroute-vehicle-config')||'{}')}}
+  catch{return defaultVehicleConfig}
+}
 const stepFromPath=()=>{
   const clean=window.location.pathname.replace(/\/+$/,'')||'/'
   const i=paths.indexOf(clean)
@@ -315,7 +320,7 @@ const stepFromPath=()=>{
 }
 export default function App(){
   const [step,setStepState]=useState(stepFromPath)
-  const [config,setConfig]=useState({category:'',model:'',modified:false,energy:'',capacity:'',consumption:'',level:100,customName:''})
+  const [config,setConfig]=useState(loadVehicleConfig)
   const setStep=next=>{
     const target=paths[next]
     if(window.location.pathname!==target)window.history.pushState({step:next},'',target)
@@ -330,6 +335,9 @@ export default function App(){
     window.addEventListener('popstate',onPop)
     return ()=>window.removeEventListener('popstate',onPop)
   },[])
+  useEffect(()=>{
+    try{localStorage.setItem('smartroute-vehicle-config',JSON.stringify(config))}catch{}
+  },[config])
   useEffect(()=>{
     // /route needs a vehicle: send direct visits back to the vehicle profile
     if(step===2&&!(config.capacity>0&&config.consumption>0)){window.history.replaceState({step:1},'','/vehicle');setStepState(1)}
