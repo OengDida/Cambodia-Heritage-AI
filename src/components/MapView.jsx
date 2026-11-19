@@ -25,7 +25,7 @@ function ClickCapture({onMapClick}) {
 }
 export default function MapView({origin,destination,route,stations,filter,onMapClick,rangePoint}) {
   const visible=stations.filter(s=>filter==='all'||(filter==='ev'&&s.type!=='gas_only')||(filter==='gas'&&s.type!=='ev_only')||(filter==='hybrid'&&s.type==='hybrid_hub'))
-  return <MapContainer center={[12.15,104.90]} zoom={7} scrollWheelZoom className="h-full w-full">
+  return <MapContainer center={[12.15,104.90]} zoom={7} zoomControl={false} scrollWheelZoom className="h-full w-full">
     <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
     <ClickCapture onMapClick={onMapClick}/><FitRoute route={route} origin={origin} destination={destination}/>
     {route?.length>1&&<><Polyline positions={route.map(p=>[p[1],p[0]])} pathOptions={{color:'#20d69a',weight:9,opacity:.18}}/><Polyline positions={route.map(p=>[p[1],p[0]])} pathOptions={{color:'#20d69a',weight:4,opacity:.95}}/></>}
