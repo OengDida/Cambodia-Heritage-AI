@@ -78,6 +78,23 @@ const distanceKm = (a, b) => {
   return 6371 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
 }
 
+function distanceToRouteKm(point, coordinates) {
+  if (!coordinates?.length) return Infinity
+  if (coordinates.length === 1) return distanceKm([point.lng, point.lat], coordinates[0])
+  const kmPerDegree = 111.32
+  let closest = Infinity
+  for (let i = 1; i < coordinates.length; i++) {
+    const a = coordinates[i - 1], b = coordinates[i]
+    const meanLat = (a[1] + b[1] + point.lat) / 3
+    const xScale = kmPerDegree * Math.cos(meanLat * Math.PI / 180)
+    const ax = (a[0] - point.lng) * xScale, ay = (a[1] - point.lat) * kmPerDegree
+    const dx = (b[0] - a[0]) * xScale, dy = (b[1] - a[1]) * kmPerDegree
+    const t = Math.max(0, Math.min(1, -(ax * dx + ay * dy) / (dx * dx + dy * dy || 1)))
+    closest = Math.min(closest, Math.hypot(ax + t * dx, ay + t * dy))
+  }
+  return closest
+}
+
 function sampleRoute(coordinates, spacingKm = 10, maxPoints = 40) {
   if (!coordinates?.length) return []
   if (coordinates.length === 1) return [coordinates[0]]
@@ -109,6 +126,7 @@ const CATEGORY_TYPES = {
   hybrid: [GAS_TYPE, EV_TYPE],
 }
 const HUB_RADIUS_KM = 0.3
+const ROUTE_CORRIDOR_KM = 2.5
 
 const kmBetween = (a, b) => distanceKm([a.lng, a.lat], [b.lng, b.lat])
 
@@ -164,7 +182,7 @@ export async function searchStationsAlongRoute(routeCoordinates, category = 'all
     }
     onProgress(Math.min(start + batchSize, samplePoints.length), samplePoints.length, found.size)
   }
-  const places = [...found.values()]
+  const places = [...found.values()].filter(place => distanceToRouteKm(place, routeCoordinates) <= ROUTE_CORRIDOR_KM)
   markHybridHubs(places)
   return { places, failedAreas, sampleCount: samplePoints.length }
 }
