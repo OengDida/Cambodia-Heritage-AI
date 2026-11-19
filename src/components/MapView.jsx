@@ -1,39 +1,90 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet'
-import L from 'leaflet'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { googleMapsKey, loadGoogleMaps } from '../googleMaps'
 
-const icon = (color, symbol='') => L.divIcon({
-  className:'custom-pin',
-  html:`<div style="background:${color};width:25px;height:25px;border:2px solid white;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 3px 12px #0008;display:grid;place-items:center"><span style="transform:rotate(45deg);font-size:11px;color:#071411;font-weight:900">${symbol}</span></div>`,
-  iconSize:[25,25],iconAnchor:[12,24]
-})
-const icons = {
-  origin: icon('#20d69a','A'), destination:icon('#f7b84b','B'),
-  ev:icon('#53b7ff','⚡'), gas:icon('#f7b84b','⛽'), hybrid:icon('#b69cff','✦'), warning:icon('#ff647c','!')
-}
-function FitRoute({route, origin, destination}) {
-  const map=useMap()
-  useEffect(()=>{
-    if(route?.length>1) map.fitBounds(route.map(p=>[p[1],p[0]]),{padding:[55,55]})
-    else if(origin&&destination) map.fitBounds([[origin.lat,origin.lng],[destination.lat,destination.lng]],{padding:[55,55]})
-  },[route,origin,destination,map])
-  return null
-}
-function ClickCapture({onMapClick}) {
-  useMapEvents({click:e=>onMapClick?.({lat:e.latlng.lat,lng:e.latlng.lng})})
-  return null
-}
-export default function MapView({origin,destination,route,stations,filter,onMapClick,rangePoint}) {
-  const visible=stations.filter(s=>filter==='all'||(filter==='ev'&&s.type!=='gas_only')||(filter==='gas'&&s.type!=='ev_only')||(filter==='hybrid'&&s.type==='hybrid_hub'))
-  return <MapContainer center={[12.15,104.90]} zoom={7} zoomControl={false} scrollWheelZoom className="h-full w-full">
-    <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-    <ClickCapture onMapClick={onMapClick}/><FitRoute route={route} origin={origin} destination={destination}/>
-    {route?.length>1&&<><Polyline positions={route.map(p=>[p[1],p[0]])} pathOptions={{color:'#20d69a',weight:9,opacity:.18}}/><Polyline positions={route.map(p=>[p[1],p[0]])} pathOptions={{color:'#20d69a',weight:4,opacity:.95}}/></>}
-    {origin&&<Marker position={[origin.lat,origin.lng]} icon={icons.origin}><Popup><b>Origin</b><br/>{origin.name}</Popup></Marker>}
-    {destination&&<Marker position={[destination.lat,destination.lng]} icon={icons.destination}><Popup><b>Destination</b><br/>{destination.name}</Popup></Marker>}
-    {visible.map(s=><Marker key={s.id} position={[s.lat,s.lng]} icon={s.type==='ev_only'?icons.ev:s.type==='gas_only'?icons.gas:icons.hybrid}>
-      <Popup><div className="min-w-40"><b>{s.name}</b><br/>{s.brand} · {s.road}<br/>Hours: {s.hours}<br/>{s.connectors.length?`Connectors: ${s.connectors.join(', ')}`:'Fuel pumps'}<br/><small>Confirm current availability before travel.</small></div></Popup>
-    </Marker>)}
-    {rangePoint&&<Marker position={[rangePoint.lat,rangePoint.lng]} icon={icons.warning}><Popup><b>Estimated range limit</b><br/>Energy may run low around here.</Popup></Marker>}
-  </MapContainer>
+export default function MapView({ origin, destination, route, stations, filter, onMapClick, rangePoint }) {
+  const host = useRef(null)
+  const map = useRef(null)
+  const clickRef = useRef(onMapClick)
+  const [status, setStatus] = useState(googleMapsKey ? 'loading' : 'missing-key')
+  const [loadError, setLoadError] = useState('')
+  useEffect(() => { clickRef.current = onMapClick }, [onMapClick])
+
+  useEffect(() => {
+    if (!googleMapsKey || !host.current) return
+    let alive = true
+    let instance
+    const authFailure = () => {
+      if (alive) {
+        setLoadError('Google rejected the API key. Check that it is valid, billing is enabled, and Maps JavaScript API is allowed for this key and localhost referrer.')
+        setStatus('error')
+      }
+    }
+    window.gm_authFailure = authFailure
+    loadGoogleMaps().then(async maps => {
+      if (!alive) return
+      const { Map } = await maps.importLibrary('maps')
+      if (!alive) return
+      instance = new Map(host.current, {
+        center: { lat: 12.15, lng: 104.90 }, zoom: 7,
+        mapTypeControl: true, streetViewControl: false, fullscreenControl: true,
+        clickableIcons: true,
+      })
+      instance.addListener('click', event => {
+        if (event.latLng) clickRef.current?.({ lat: event.latLng.lat(), lng: event.latLng.lng() })
+      })
+      map.current = instance
+      setStatus('ready')
+    }).catch(error => {
+      if (alive) {
+        setLoadError(error?.message || 'Google Maps JavaScript API could not be loaded. Check the browser console for Google Maps authorization errors.')
+        setStatus('error')
+      }
+    })
+    return () => { alive = false; map.current = null; if (window.gm_authFailure === authFailure) delete window.gm_authFailure }
+  }, [])
+
+  useEffect(() => {
+    const instance = map.current
+    const maps = window.google?.maps
+    if (status !== 'ready' || !instance || !maps) return
+    const markers = []
+    let line
+    const addPin = (point, title, color, label) => {
+      if (!point) return
+      markers.push(new maps.Marker({
+        map: instance, position: { lat: point.lat, lng: point.lng }, title,
+        label: { text: label, color: '#071411', fontWeight: '700', fontSize: '11px' },
+        icon: { path: maps.SymbolPath.CIRCLE, scale: 10, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+      }))
+    }
+    addPin(origin, `Origin: ${origin?.name || ''}`, '#20d69a', 'A')
+    addPin(destination, `Destination: ${destination?.name || ''}`, '#f7b84b', 'B')
+    const visible = stations.filter(s => filter === 'all' || (filter === 'ev' && s.type !== 'gas_only') || (filter === 'gas' && s.type !== 'ev_only') || (filter === 'hybrid' && s.type === 'hybrid_hub'))
+    visible.forEach(s => addPin(s, `${s.name} · ${s.brand} · ${s.road} · Verify current availability`, s.type === 'ev_only' ? '#53b7ff' : s.type === 'gas_only' ? '#f7b84b' : '#b69cff', s.type === 'ev_only' ? '⚡' : '•'))
+    addPin(rangePoint, 'Estimated range limit', '#ff647c', '!')
+    if (route?.length > 1) line = new maps.Polyline({
+      map: instance,
+      path: route.map(([lng, lat]) => ({ lat, lng })),
+      geodesic: true,
+      strokeColor: '#20d69a', strokeOpacity: 0.9, strokeWeight: 5,
+    })
+    const points = [origin, destination].filter(Boolean)
+    if (points.length === 2) {
+      const bounds = new maps.LatLngBounds()
+      points.forEach(point => bounds.extend({ lat: point.lat, lng: point.lng }))
+      instance.fitBounds(bounds, { left: 430, right: 320, top: 90, bottom: 80 })
+    } else if (points.length === 1) instance.panTo({ lat: points[0].lat, lng: points[0].lng })
+    return () => { markers.forEach(marker => marker.setMap(null)); line?.setMap(null) }
+  }, [origin, destination, route, stations, filter, rangePoint, status])
+
+  return <div className="google-map relative h-full w-full">
+    <div ref={host} className="h-full w-full" />
+    {status !== 'ready' && <div className="absolute inset-0 grid place-items-center bg-slate-900/95 p-6 text-center text-white">
+      <div className="max-w-md rounded-2xl border border-white/10 bg-ink/95 p-6 shadow-xl">
+        <div className="text-lg font-bold">{status === 'missing-key' ? 'Google Maps API key required' : status === 'error' ? 'Google Maps failed to load' : 'Loading Google Maps…'}</div>
+        {status === 'missing-key' && <p className="mt-3 text-sm leading-6 text-slate-300">Enable Maps JavaScript API and Places API (New) in Google Cloud, then add <code className="text-emeraldx">VITE_GOOGLE_MAPS_API_KEY=your_key</code> to <code className="text-emeraldx">.env.local</code> and restart Vite. Billing is required. On Vercel, add the same variable under Project Settings, Environment Variables and redeploy; restrict the key to your domain and these APIs.</p>}
+        {status === 'error' && <p className="mt-3 text-sm leading-6 text-slate-300">{loadError || 'Check the API key, HTTP referrer restrictions, enabled APIs, billing, and network connection.'}</p>}
+      </div>
+    </div>}
+  </div>
 }
