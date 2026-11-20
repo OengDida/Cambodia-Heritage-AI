@@ -84,6 +84,37 @@ export async function geocodeGoogleAddress(address) {
   }
 }
 
+// Text search used by the destination picker. This matches the attached
+// App.jsx flow: search all of Cambodia, then let the user choose a result.
+export async function searchGooglePlaces(query) {
+  const maps = await loadGoogleMaps()
+  const { Place } = await maps.importLibrary('places')
+  const { places = [] } = await Place.searchByText({
+    textQuery: `${query} in Cambodia`,
+    fields: ['id', 'displayName', 'location', 'formattedAddress', 'businessStatus', 'googleMapsURI'],
+    language: 'en',
+    region: 'kh',
+    maxResultCount: 6,
+  })
+  return places.filter(place => place.location).map(place => {
+    const location = place.location
+    const lat = typeof location.lat === 'function' ? location.lat() : location.lat
+    const lng = typeof location.lng === 'function' ? location.lng() : location.lng
+    const name = place.displayName || 'Google Maps place'
+    const formattedAddress = place.formattedAddress || name
+    return {
+      name,
+      formattedAddress,
+      detail: [formattedAddress, place.businessStatus === 'CLOSED_PERMANENTLY' ? 'Permanently closed' : ''].filter(Boolean).join(' · '),
+      lat,
+      lng,
+      placeId: place.id,
+      mapsUrl: place.googleMapsURI,
+      isCurrentLocation: false,
+    }
+  }).filter(place => Number.isFinite(place.lat) && Number.isFinite(place.lng))
+}
+
 export async function computeGoogleRoute(origin, destination) {
   const maps = await loadGoogleMaps()
   const { Route } = await maps.importLibrary('routes')

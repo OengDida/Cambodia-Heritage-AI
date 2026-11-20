@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Fuel, Gauge, Github, Info, LocateFixed, Leaf, Map as MapIcon, MapPin, Navigation, PlugZap, Route, Search, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
 import MapView from './components/MapView'
-import { computeGoogleRoute, geocodeGoogleAddress, googleMapsErrorMessage, loadGoogleMaps, searchStationsAlongRoute } from './googleMaps'
+import { computeGoogleRoute, geocodeGoogleAddress, googleMapsErrorMessage, loadGoogleMaps, searchGooglePlaces, searchStationsAlongRoute } from './googleMaps'
 import { vehicleGroups } from './data/vehicles'
 import { provinces, stations } from './data/places'
 import { defaultRates } from './data/rates'
@@ -146,6 +146,60 @@ function PlaceSearch({label,value,placeholder,onPick,action,bias}){
       {action}
     </div>
     {error&&<div role="status" className="text-[10px] leading-4 text-amberx">{error}</div>}
+  </div>
+}
+
+// Destination search from the supplied App.jsx: explicit Google Places
+// text-search results scoped to Cambodia, rather than autocomplete suggestions.
+function GoogleTextPlaceSearch({label,value,placeholder,onPick,action}){
+  const [q,setQ]=useState('')
+  const [open,setOpen]=useState(false)
+  const [found,setFound]=useState([])
+  const [status,setStatus]=useState('idle')
+  const [searchError,setSearchError]=useState('')
+  const [searched,setSearched]=useState('')
+  const term=q.trim()
+  const search=async()=>{
+    if(term.length<2||status==='loading')return
+    setStatus('loading')
+    try{
+      const data=await searchGooglePlaces(term)
+      setFound(data)
+      setSearchError('')
+      setSearched(term)
+      setStatus('done')
+    }catch(error){
+      setSearchError(googleMapsErrorMessage(error,'Google Places'))
+      setStatus('error')
+    }
+  }
+  const pick=place=>{
+    onPick(place)
+    setOpen(false)
+    setQ('')
+    setFound([])
+    setSearched('')
+    setStatus('idle')
+  }
+  const showFound=status==='done'&&searched===term
+  const item='block w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-white/5'
+  return <div className="block space-y-2">
+    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+    <div className="flex gap-2">
+      <div className="relative min-w-0 flex-1">
+        <Search size={15} className="pointer-events-none absolute left-3 top-3.5 text-slate-400"/>
+        <input className="field w-full !pl-9" aria-label={label} value={open?q:value} placeholder={open&&value?value:placeholder} onFocus={()=>{setOpen(true);setQ('')}} onBlur={()=>setOpen(false)} onChange={event=>setQ(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();search()}else if(event.key==='Escape')event.target.blur()}} autoComplete="off"/>
+      </div>
+      {action}
+    </div>
+    {open&&<div onMouseDown={event=>event.preventDefault()} className="max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-black/30 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {term.length>=2&&!showFound&&<button type="button" onClick={search} disabled={status==='loading'} className={cx(item,'font-bold text-emeraldx')}>{status==='loading'?'Searching…':`Search all places for “${term}”`}</button>}
+      {showFound&&found.length>0&&<div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Google Maps places in Cambodia</div>}
+      {showFound&&found.map((place,index)=><button type="button" key={place.placeId||`${place.lat}:${place.lng}:${index}`} onClick={()=>pick(place)} className={item}><div className="font-semibold">{place.name}</div><div className="mt-0.5 truncate text-[10px] text-slate-500">{place.detail}</div></button>)}
+      {showFound&&!found.length&&<div className="px-3 py-3 text-[11px] text-slate-400">No places found. Try a different spelling or a nearby town.</div>}
+      {status==='error'&&<div role="status" className="px-3 py-3 text-[11px] leading-5 text-rose-300">Google Places search failed: {searchError}</div>}
+      {term.length<2&&<div className="px-3 py-2 text-[10px] text-slate-500">Search Google Maps for a town, business, road, hotel or landmark.</div>}
+    </div>}
   </div>
 }
 const repo='https://github.com/OengDida/SmartRoute-AI'
@@ -487,7 +541,7 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
           <button onClick={useCurrentLocation} disabled={locating} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emeraldx/30 bg-emeraldx/5 py-2.5 text-xs font-bold text-emeraldx transition hover:bg-emeraldx/10 disabled:opacity-60"><LocateFixed size={15} className={locating?'animate-pulse':''}/>{locating?'Locating…':'Use current location'}</button>
           {locNote&&<div className="mt-2 text-[10px] leading-4 text-slate-400">{locNote}</div>}
 
-          <div className="mt-4"><PlaceSearch label="Destination" value={destinationName} placeholder="Search a place or address" onPick={pickDestination} bias={origin||initialLocation} action={pinButton('destination')}/></div>
+          <div className="mt-4"><GoogleTextPlaceSearch label="Destination" value={destinationName} placeholder="Search a place in Cambodia" onPick={pickDestination} action={pinButton('destination')}/></div>
           <div className="mt-3 flex items-center justify-between rounded-xl bg-black/20 p-3"><div><div className="text-[10px] uppercase text-slate-500">Vehicle</div><div className="mt-1 text-xs font-bold">{vehicleName}</div></div><div className="text-right"><div className="text-[10px] uppercase text-slate-500">Current level</div><div className="mt-1 text-sm font-black text-emeraldx">{config.level}%</div></div></div>
           <button onClick={()=>calculate()} disabled={!origin||!destination} className="disabled:opacity-40 mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emeraldx py-3 text-xs font-extrabold text-ink hover:bg-emerald-300"><Navigation size={15}/> Recalculate route</button>
           <div className="mt-2 text-center text-[10px] text-slate-500">{routeStatus}</div>
