@@ -61,13 +61,16 @@ export default function MapView({ origin, destination, route, stations = [], fil
       if (!point) return
       markers.push(new maps.Marker({
         map: instance, position: { lat: point.lat, lng: point.lng }, title,
-        label: { text: label, color: '#071411', fontWeight: '700', fontSize: '11px' },
+        ...(label?{label: { text: label, color: '#071411', fontWeight: '700', fontSize: '11px' }}:{}),
         icon: icon || { path: maps.SymbolPath.CIRCLE, scale: 10, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
       }))
     }
     if (!origin?.isCurrentLocation) addPin(origin, `Origin: ${origin?.name || ''}`, '#20d69a', 'A')
-    const redPin = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="48" viewBox="0 0 40 48"><path d="M20 1C9.5 1 1 9.5 1 20c0 14 19 27 19 27s19-13 19-27C39 9.5 30.5 1 20 1Z" fill="#e53935" stroke="#fff" stroke-width="2"/><circle cx="20" cy="20" r="10" fill="#fff"/><text x="20" y="24" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#c62828">B</text></svg>')}`
-    addPin(destination, `Destination: ${destination?.name || ''}`, '#e53935', '', { url: redPin, scaledSize: new maps.Size(30, 36), anchor: new maps.Point(15, 36) })
+    addPin(destination, `Destination: ${destination?.name || ''}`, '#e53935', '', {
+      url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+      scaledSize: new maps.Size(32, 32),
+      anchor: new maps.Point(16, 32),
+    })
     const visibleStations = stations.filter(station => filter === 'all' || (filter === 'ev' && station.type !== 'gas_only') || (filter === 'gas' && station.type !== 'ev_only') || (filter === 'hybrid' && station.type === 'hybrid_hub'))
     visibleStations.forEach(station => addPin(
       station,
