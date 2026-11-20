@@ -152,12 +152,13 @@ function PlaceSearch({label,value,placeholder,onPick,action,bias}){
 // Destination search from the supplied App.jsx: explicit Google Places
 // text-search results scoped to Cambodia, rather than autocomplete suggestions.
 function GoogleTextPlaceSearch({label,value,placeholder,onPick,action}){
-  const [q,setQ]=useState('')
+  const [q,setQ]=useState(value||'')
   const [open,setOpen]=useState(false)
   const [found,setFound]=useState([])
   const [status,setStatus]=useState('idle')
   const [searchError,setSearchError]=useState('')
   const [searched,setSearched]=useState('')
+  useEffect(()=>setQ(value||''),[value])
   const term=q.trim()
   const search=async()=>{
     if(term.length<2||status==='loading')return
@@ -176,7 +177,7 @@ function GoogleTextPlaceSearch({label,value,placeholder,onPick,action}){
   const pick=place=>{
     onPick(place)
     setOpen(false)
-    setQ('')
+    setQ(place.formattedAddress||place.name||'')
     setFound([])
     setSearched('')
     setStatus('idle')
@@ -188,7 +189,7 @@ function GoogleTextPlaceSearch({label,value,placeholder,onPick,action}){
     <div className="flex gap-2">
       <div className="relative min-w-0 flex-1">
         <Search size={15} className="pointer-events-none absolute left-3 top-3.5 text-slate-400"/>
-        <input className="field w-full !pl-9" aria-label={label} value={open?q:value} placeholder={open&&value?value:placeholder} onFocus={()=>{setOpen(true);setQ('')}} onBlur={()=>setOpen(false)} onChange={event=>setQ(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();search()}else if(event.key==='Escape')event.target.blur()}} autoComplete="off"/>
+        <input className="field w-full !pl-9" aria-label={label} value={q} placeholder={placeholder} onFocus={event=>{setOpen(true);event.currentTarget.select()}} onBlur={()=>setOpen(false)} onChange={event=>{setQ(event.target.value);setFound([]);setSearched('');setStatus('idle');setSearchError('')}} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();search()}else if(event.key==='Escape')event.target.blur()}} autoComplete="off"/>
       </div>
       {action}
     </div>
