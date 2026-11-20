@@ -586,7 +586,12 @@ const stepFromPath=()=>{
 export default function App(){
   const [step,setStepState]=useState(stepFromPath)
   const [config,setConfig]=useState(loadVehicleConfig)
-  const [initialLocation,setInitialLocation]=useState(null)
+  const [initialLocation,setInitialLocation]=useState(()=>{
+    try{
+      const saved=JSON.parse(localStorage.getItem('smartroute-initial-location')||'null')
+      return saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lng)?saved:null
+    }catch{return null}
+  })
   const hasVehicleConfig=config.capacity>0&&config.consumption>0
   const initialPathStep=stepFromPath()
   const initialHasVehicle=(()=>{const saved=loadVehicleConfig();return saved.capacity>0&&saved.consumption>0})()
@@ -641,6 +646,7 @@ export default function App(){
   }
   const finishLocation=location=>{
     setInitialLocation(location)
+    try{localStorage.setItem('smartroute-initial-location',JSON.stringify(location))}catch{}
     setStep(1)
   }
   const visibleStep=step===3&&!initialLocation?2:step
