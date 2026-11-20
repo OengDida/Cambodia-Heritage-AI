@@ -159,36 +159,41 @@ function LocationGate({onSuccess,onBack}) {
     if(!navigator.geolocation){setLoading(false);setError('unsupported');return}
     const requestId=++requestIdRef.current
     setLoading(true);setError('')
-    try{
-      navigator.geolocation.getCurrentPosition(position=>{
-        if(requestId!==requestIdRef.current)return
-        const {latitude:lat,longitude:lng,accuracy}=position.coords||{}
-        if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180){
-          setLoading(false);setError('unavailable');return
-        }
-        onSuccess({lat,lng,accuracy:Number.isFinite(accuracy)?Math.max(0,accuracy):0})
-      },err=>{
-        if(requestId!==requestIdRef.current)return
-        setLoading(false)
-        setError(err?.code===1?'denied':err?.code===2?'unavailable':err?.code===3?'timeout':'unavailable')
-      },{enableHighAccuracy:true,timeout:20000,maximumAge:0})
-    }catch{
-      if(requestId!==requestIdRef.current)return
-      setLoading(false);setError('unavailable')
-    }
+    // LOCATION PROMPT DISABLED: this getCurrentPosition call is what makes the browser ask for location permission.
+    // try{
+    //   navigator.geolocation.getCurrentPosition(position=>{
+    //     if(requestId!==requestIdRef.current)return
+    //     const {latitude:lat,longitude:lng,accuracy}=position.coords||{}
+    //     if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180){
+    //       setLoading(false);setError('unavailable');return
+    //     }
+    //     onSuccess({lat,lng,accuracy:Number.isFinite(accuracy)?Math.max(0,accuracy):0})
+    //   },err=>{
+    //     if(requestId!==requestIdRef.current)return
+    //     setLoading(false)
+    //     setError(err?.code===1?'denied':err?.code===2?'unavailable':err?.code===3?'timeout':'unavailable')
+    //   },{enableHighAccuracy:true,timeout:20000,maximumAge:0})
+    // }catch{
+    //   if(requestId!==requestIdRef.current)return
+    //   setLoading(false);setError('unavailable')
+    // }
+    // TEMP SKIP: fake Phnom Penh fix so the rest of the app can be explored without real location.
+    setLoading(false)
+    onSuccess({lat:11.5564,lng:104.9282,accuracy:50})
   }
   requestRef.current=requestLocation
 
   useEffect(()=>{
     let active=true
     if(!navigator.geolocation){setError('unsupported');return()=>{active=false}}
-    if(navigator.permissions?.query){
-      navigator.permissions.query({name:'geolocation'}).then(permission=>{
-        if(!active)return
-        if(permission.state==='granted')requestRef.current?.()
-        else if(permission.state==='denied')setError('denied')
-      }).catch(()=>{})
-    }
+    // LOCATION PROMPT DISABLED: auto-requests location when permission was already granted.
+    // if(navigator.permissions?.query){
+    //   navigator.permissions.query({name:'geolocation'}).then(permission=>{
+    //     if(!active)return
+    //     if(permission.state==='granted')requestRef.current?.()
+    //     else if(permission.state==='denied')setError('denied')
+    //   }).catch(()=>{})
+    // }
     return()=>{active=false;requestIdRef.current++}
   },[])
 
