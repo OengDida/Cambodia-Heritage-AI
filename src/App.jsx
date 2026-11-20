@@ -351,16 +351,30 @@ function Setup({onBack,onGenerate,config,setConfig}) {
       <div className="space-y-4"><Panel className="p-5"><div className="mb-3 flex items-center gap-2 text-emeraldx"><Gauge size={18}/><b>Range snapshot</b></div><div className="text-4xl font-black">{config.capacity>0&&config.consumption>0?Math.round(config.capacity*config.level/100/(config.consumption/100)):'—'}<span className="ml-1 text-base font-semibold text-slate-400">km</span></div><p className="mt-2 text-xs leading-5 text-slate-400">Estimated remaining range at {config.level}% based on the entered consumption rate. Actual range varies with speed, load, terrain and weather.</p></Panel><Panel className="p-5"><div className="mb-3 flex items-center gap-2 text-amberx"><Info size={18}/><b>Before you hit the road</b></div><ul className="space-y-3 text-xs leading-5 text-slate-400"><li className="flex gap-2"><Check size={15} className="shrink-0 text-emeraldx"/> Verify your actual fuel or battery capacity.</li><li className="flex gap-2"><Check size={15} className="shrink-0 text-emeraldx"/> Keep a safety buffer for traffic and detours.</li><li className="flex gap-2"><Check size={15} className="shrink-0 text-emeraldx"/> Check station status before relying on a charger.</li></ul></Panel><div className="rounded-xl border border-white/10 p-4 text-xs leading-5 text-slate-500">Demo defaults are estimates, not certified manufacturer test figures. You can customize your consumption and rates later.</div></div>
     </div></div></div>
 }
+const loadTripSnapshot=()=>{
+  try{
+    const saved=JSON.parse(localStorage.getItem('smartroute-trip')||'null')
+    if(!saved||!Array.isArray(saved.route))return null
+    const validPoint=p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)
+    return {
+      ...saved,
+      origin:validPoint(saved.origin)?saved.origin:null,
+      destination:validPoint(saved.destination)?saved.destination:null,
+      route:saved.route.filter(p=>Array.isArray(p)&&Number.isFinite(p[0])&&Number.isFinite(p[1])),
+    }
+  }catch{return null}
+}
 function TripPlanner({config,onChangeVehicle,initialLocation}) {
-  const [originName,setOriginName]=useState(initialLocation?'Current location':'')
-  const [destinationName,setDestinationName]=useState('')
-  const [origin,setOrigin]=useState(()=>initialLocation?{lat:initialLocation.lat,lng:initialLocation.lng,name:'Current location',isCurrentLocation:true}:null)
-  const [destination,setDestination]=useState(null)
-  const [route,setRoute]=useState([])
+  const [savedTrip]=useState(loadTripSnapshot)
+  const [originName,setOriginName]=useState(()=>savedTrip?.originName||(initialLocation?'Current location':''))
+  const [destinationName,setDestinationName]=useState(()=>savedTrip?.destinationName||'')
+  const [origin,setOrigin]=useState(()=>savedTrip?.origin||(initialLocation?{lat:initialLocation.lat,lng:initialLocation.lng,name:'Current location',isCurrentLocation:true}:null))
+  const [destination,setDestination]=useState(()=>savedTrip?.destination||null)
+  const [route,setRoute]=useState(()=>savedTrip?.route||[])
   const hasGoogleRoute=route.length>1
-  const [distance,setDistance]=useState(0)
-  const [duration,setDuration]=useState(0)
-  const [routeStatus,setRouteStatus]=useState('Choose an origin and destination')
+  const [distance,setDistance]=useState(()=>Number.isFinite(savedTrip?.distance)?savedTrip.distance:0)
+  const [duration,setDuration]=useState(()=>Number.isFinite(savedTrip?.duration)?savedTrip.duration:0)
+  const [routeStatus,setRouteStatus]=useState(()=>savedTrip?.route?.length>1?'Google Routes · traffic-aware driving route':'Choose an origin and destination')
   const [filter,setFilter]=useState('all')
   const [rates,setRates]=useState(defaultRates)
   const [showRates,setShowRates]=useState(false)
@@ -451,7 +465,22 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
       setRouteError(`${googleMapsErrorMessage(error,'Google Routes')} No custom route or estimated distance/time was substituted.`)
     }
   }
-  useEffect(()=>{calculate(origin,destination)},[])
+  useEffect(()=>{
+    if(savedTrip?.route?.length>1)return
+    calculate(origin,destination)
+  },[])
+  useEffect(()=>{
+    try{
+      const saved={origin,destination,originName,destinationName,route,distance,duration}
+      if(route.length>1||!localStorage.getItem('smartroute-trip'))localStorage.setItem('smartroute-trip',JSON.stringify(saved))
+      else {
+        const previous=JSON.parse(localStorage.getItem('smartroute-trip')||'null')
+        const samePoint=(a,b)=>a&&b&&a.lat===b.lat&&a.lng===b.lng
+        const sameTrip=samePoint(previous?.origin,origin)&&samePoint(previous?.destination,destination)
+        localStorage.setItem('smartroute-trip',JSON.stringify({...saved,route:sameTrip?previous?.route||[]:[],distance:sameTrip?previous?.distance||0:0,duration:sameTrip?previous?.duration||0:0}))
+      }
+    }catch{}
+  },[origin,destination,originName,destinationName,route,distance,duration])
   const pickOrigin=pl=>{
     const selected={...pl,isCurrentLocation:false}
     setOriginName(pl.formattedAddress||pl.name)
