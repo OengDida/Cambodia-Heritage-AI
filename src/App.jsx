@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowLeft, ArrowRight, BatteryCharging, Bike, CarFront, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Clock3, Fuel, Gauge, Github, Info, LocateFixed, Leaf, Map as MapIcon, MapPin, Navigation, PlugZap, Route, Search, ShieldAlert, Sparkles, Truck, Zap } from 'lucide-react'
 import MapView from './components/MapView'
+import Landing from './components/Landing'
 import { computeGoogleRoute, geocodeGoogleAddress, googleMapsErrorMessage, loadGoogleMaps, searchStationsAlongRoute } from './googleMaps'
 import { vehicleGroups } from './data/vehicles'
 import { provinces, stations } from './data/places'
@@ -148,41 +149,6 @@ function PlaceSearch({label,value,placeholder,onPick,action,bias}){
     {error&&<div role="status" className="text-[10px] leading-4 text-amberx">{error}</div>}
   </div>
 }
-const repo='https://github.com/OengDida/SmartRoute-AI'
-function FooterCol({title,children}){return <div><div className="mb-2 text-sm font-bold text-white">{title}</div><ul className="space-y-0.5">{children}</ul></div>}
-function FLink({href,onClick,external,children}){return <li><a href={href} onClick={onClick?e=>{e.preventDefault();onClick()}:undefined} {...(external?{target:'_blank',rel:'noopener noreferrer'}:{})} className="text-sm leading-6 text-slate-400 transition hover:text-emeraldx">{children}</a></li>}
-function FText({children}){return <li className="text-sm leading-6 text-slate-500">{children}</li>}
-function Welcome({onStart,onRoute}){return <main className="welcome min-h-screen overflow-hidden px-5 text-white">
-  <div className="absolute inset-0 bg-grid opacity-30"/>
-  <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col">
-    <header className="flex items-center gap-3 py-7"><img src="/favicon.svg" alt="SmartRoute AI logo" className="h-11 w-11 object-contain [filter:drop-shadow(0_0_12px_rgba(32,214,154,0.35))]"/><div><div className="text-xl font-black tracking-tight">SmartRoute <span className="text-emeraldx">AI</span></div><div className="text-[10px] uppercase tracking-[.24em] text-slate-500">Cambodia mobility intelligence</div></div></header>
-    <section className="grid flex-1 items-center gap-12 py-12 lg:grid-cols-[1.05fr_.95fr]">
-      <div className="max-w-2xl"><div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emeraldx/25 bg-emeraldx/10 px-4 py-2 text-xs font-semibold text-emeraldx"><Sparkles size={14}/> Built for Cambodia's highways</div>
-        <h1 className="text-5xl font-black leading-[1.06] tracking-tight sm:text-7xl">Every kilometer.<br/><span className="text-emeraldx">Smarter.</span></h1>
-        <p className="mt-7 max-w-xl text-lg leading-8 text-slate-300">AI-Powered Multi-Fuel Highway & Range Planner for Cambodia. Prevent dead-zones, find EV chargers & gas pumps, and optimize trip costs in KHR & USD.</p>
-        <div className="mt-9 flex flex-wrap gap-3"><button onClick={onStart} className="flex items-center gap-3 rounded-xl bg-emeraldx px-6 py-4 font-extrabold text-ink shadow-glow transition hover:-translate-y-0.5 hover:bg-emerald-300">Launch SmartRoute AI <ArrowRight size={18}/></button><div className="flex items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm text-slate-400"><ShieldAlert size={16} className="text-amberx"/> Plan ahead. Arrive prepared.</div></div>
-        <div className="mt-12 grid max-w-lg grid-cols-3 gap-4 border-t border-white/10 pt-6"><div><div className="text-2xl font-black">25+</div><div className="text-xs text-slate-500">Station pins</div></div><div><div className="text-2xl font-black">5</div><div className="text-xs text-slate-500">Powertrains</div></div><div><div className="text-2xl font-black">៛ / $</div><div className="text-xs text-slate-500">Dual currency</div></div></div>
-      </div>
-      <div className="relative hidden lg:block"><div className="absolute -inset-10 rounded-full bg-emeraldx/10 blur-3xl"/><div className="relative rounded-[2rem] border border-white/10 bg-slate-900/70 p-5 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between"><span className="text-sm font-bold">Live route preview</span><span className="rounded-full bg-emeraldx/10 px-3 py-1 text-[10px] font-bold text-emeraldx">CAMBODIA</span></div>
-        <div className="map-art relative h-[390px] overflow-hidden rounded-2xl border border-white/10"><svg viewBox="0 0 500 390" className="h-full w-full"><path d="M40 70 C130 120 110 170 180 195 S260 235 270 315 S370 340 440 280" fill="none" stroke="#20d69a" strokeWidth="5" strokeDasharray="2 10" strokeLinecap="round"/><path d="M15 290 C120 245 160 280 220 210 S350 120 480 145" fill="none" stroke="#334d46" strokeWidth="2"/><path d="M60 40 L440 350 M30 200 L470 60 M120 0 L390 390" stroke="#203a32" strokeWidth="1"/><circle cx="40" cy="70" r="10" fill="#20d69a"/><circle cx="440" cy="280" r="10" fill="#f7b84b"/><circle cx="260" cy="230" r="7" fill="#53b7ff"/><circle cx="270" cy="315" r="7" fill="#b69cff"/></svg><div className="absolute left-5 top-5 rounded-xl border border-white/10 bg-ink/80 px-3 py-2 text-xs"><div className="font-bold">Phnom Penh</div><div className="text-slate-400">Origin</div></div><div className="absolute bottom-5 right-5 rounded-xl border border-white/10 bg-ink/80 px-3 py-2 text-xs"><div className="font-bold">Siem Reap</div><div className="text-slate-400">Destination</div></div><div className="absolute bottom-5 left-5 rounded-xl bg-blue-400/15 px-3 py-2 text-xs text-blue-200">⚡ Charging stop</div></div>
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center"><div className="rounded-xl bg-white/5 p-3"><Route size={16} className="mx-auto mb-2 text-emeraldx"/><b className="text-sm">Route</b><p className="text-[10px] text-slate-500">Google Routes</p></div><div className="rounded-xl bg-white/5 p-3"><BatteryCharging size={16} className="mx-auto mb-2 text-blue-300"/><b className="text-sm">Range</b><p className="text-[10px] text-slate-500">Dead-zone alerts</p></div><div className="rounded-xl bg-white/5 p-3"><CircleDollarSign size={16} className="mx-auto mb-2 text-amberx"/><b className="text-sm">Cost</b><p className="text-[10px] text-slate-500">KHR + USD</p></div></div>
-      </div></div>
-    </section>
-    <footer className="border-t border-white/10 pt-12">
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <div><div className="flex items-center gap-3"><img src="/favicon.svg" alt="SmartRoute AI logo" className="h-9 w-9 object-contain"/><div className="text-lg font-black tracking-tight">SmartRoute <span className="text-emeraldx">AI</span></div></div><p className="mt-4 max-w-xs text-sm leading-6 text-slate-500">Highway range and trip-cost planning for Cambodia. Plan ahead. Arrive prepared.</p><div className="mt-6 flex gap-3"><a href={repo} target="_blank" rel="noopener noreferrer" aria-label="SmartRoute AI on GitHub" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-slate-400 transition hover:border-emeraldx/50 hover:text-emeraldx"><Github size={18}/></a></div></div>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4">
-          <FooterCol title="Planner"><FLink href="/vehicle" onClick={onStart}>Launch SmartRoute AI</FLink><FLink href="/vehicle" onClick={onStart}>Vehicle profile</FLink><FLink href="/route" onClick={onRoute}>Map &amp; route</FLink></FooterCol>
-          <FooterCol title="Powertrains"><FText>Electric</FText><FText>Hybrid</FText><FText>Gasoline</FText><FText>Diesel</FText><FText>Motorbike</FText></FooterCol>
-          <FooterCol title="Data &amp; maps"><FLink href="https://developers.google.com/maps/documentation/javascript" external>Google Maps &amp; Places</FLink><FLink href="https://developers.google.com/maps/documentation/javascript/routes/get-a-route" external>Google Routes</FLink><FLink href={repo+'/blob/main/src/data/places.js'} external>Station data</FLink></FooterCol>
-          <FooterCol title="Project"><FLink href={repo} external>GitHub</FLink><FLink href={repo+'/issues'} external>Report an issue</FLink><FLink href="/sitemap.xml" external>Sitemap</FLink></FooterCol>
-        </div>
-      </div>
-      <div className="mt-12 flex flex-wrap justify-between gap-x-6 gap-y-2 border-t border-white/10 py-6 text-[11px] leading-5 text-slate-500"><span>© 2026 SmartRoute AI · Cambodia trip intelligence</span><span className="max-w-xl sm:text-right">Estimates only. Station data is a curated dataset, not a live directory. Verify fuel and charger availability before you travel.</span></div>
-    </footer>
-  </div>
-</main>}
 function LocationGate({onSuccess,onBack}) {
   const [loading,setLoading]=useState(false)
   const [error,setError]=useState('')
@@ -193,36 +159,41 @@ function LocationGate({onSuccess,onBack}) {
     if(!navigator.geolocation){setLoading(false);setError('unsupported');return}
     const requestId=++requestIdRef.current
     setLoading(true);setError('')
-    try{
-      navigator.geolocation.getCurrentPosition(position=>{
-        if(requestId!==requestIdRef.current)return
-        const {latitude:lat,longitude:lng,accuracy}=position.coords||{}
-        if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180){
-          setLoading(false);setError('unavailable');return
-        }
-        onSuccess({lat,lng,accuracy:Number.isFinite(accuracy)?Math.max(0,accuracy):0})
-      },err=>{
-        if(requestId!==requestIdRef.current)return
-        setLoading(false)
-        setError(err?.code===1?'denied':err?.code===2?'unavailable':err?.code===3?'timeout':'unavailable')
-      },{enableHighAccuracy:true,timeout:20000,maximumAge:0})
-    }catch{
-      if(requestId!==requestIdRef.current)return
-      setLoading(false);setError('unavailable')
-    }
+    // LOCATION PROMPT DISABLED: this getCurrentPosition call is what makes the browser ask for location permission.
+    // try{
+    //   navigator.geolocation.getCurrentPosition(position=>{
+    //     if(requestId!==requestIdRef.current)return
+    //     const {latitude:lat,longitude:lng,accuracy}=position.coords||{}
+    //     if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180){
+    //       setLoading(false);setError('unavailable');return
+    //     }
+    //     onSuccess({lat,lng,accuracy:Number.isFinite(accuracy)?Math.max(0,accuracy):0})
+    //   },err=>{
+    //     if(requestId!==requestIdRef.current)return
+    //     setLoading(false)
+    //     setError(err?.code===1?'denied':err?.code===2?'unavailable':err?.code===3?'timeout':'unavailable')
+    //   },{enableHighAccuracy:true,timeout:20000,maximumAge:0})
+    // }catch{
+    //   if(requestId!==requestIdRef.current)return
+    //   setLoading(false);setError('unavailable')
+    // }
+    // TEMP SKIP: fake Phnom Penh fix so the rest of the app can be explored without real location.
+    setLoading(false)
+    onSuccess({lat:11.5564,lng:104.9282,accuracy:50})
   }
   requestRef.current=requestLocation
 
   useEffect(()=>{
     let active=true
     if(!navigator.geolocation){setError('unsupported');return()=>{active=false}}
-    if(navigator.permissions?.query){
-      navigator.permissions.query({name:'geolocation'}).then(permission=>{
-        if(!active)return
-        if(permission.state==='granted')requestRef.current?.()
-        else if(permission.state==='denied')setError('denied')
-      }).catch(()=>{})
-    }
+    // LOCATION PROMPT DISABLED: auto-requests location when permission was already granted.
+    // if(navigator.permissions?.query){
+    //   navigator.permissions.query({name:'geolocation'}).then(permission=>{
+    //     if(!active)return
+    //     if(permission.state==='granted')requestRef.current?.()
+    //     else if(permission.state==='denied')setError('denied')
+    //   }).catch(()=>{})
+    // }
     return()=>{active=false;requestIdRef.current++}
   },[])
 
@@ -591,7 +562,7 @@ export default function App(){
   }
   const visibleStep=step===3&&!initialLocation?2:step
   return visibleStep===0
-    ?<Welcome onStart={startSmartRoute} onRoute={()=>goToMap(0)}/>
+    ?<Landing onStart={startSmartRoute} onRoute={()=>goToMap(0)}/>
     :visibleStep===1
       ?<Setup onBack={()=>setStep(0)} onGenerate={()=>goToMap(1)} config={config} setConfig={setConfig}/>
       :visibleStep===2
