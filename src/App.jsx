@@ -604,10 +604,6 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
 }
 const paths=['/','/vehicle','/location','/route']
 const defaultVehicleConfig={category:'',model:'',modified:false,energy:'',capacity:'',consumption:'',level:100,customName:''}
-const loadVehicleConfig=()=>{
-  try{return {...defaultVehicleConfig,...JSON.parse(localStorage.getItem('smartroute-vehicle-config')||'{}')}}
-  catch{return defaultVehicleConfig}
-}
 const stepFromPath=()=>{
   const clean=window.location.pathname.replace(/\/+$/,'')||'/'
   const i=paths.indexOf(clean)
@@ -615,14 +611,13 @@ const stepFromPath=()=>{
 }
 export default function App(){
   const [step,setStepState]=useState(stepFromPath)
-  const [config,setConfig]=useState(loadVehicleConfig)
+  const [config,setConfig]=useState(defaultVehicleConfig)
   // Coordinates are deliberately session-only: a stored fix must never bypass
   // the mandatory permission gate on a fresh visit to the map.
   const [initialLocation,setInitialLocation]=useState(null)
   const hasVehicleConfig=config.capacity>0&&config.consumption>0
   const initialPathStep=stepFromPath()
-  const initialHasVehicle=(()=>{const saved=loadVehicleConfig();return saved.capacity>0&&saved.consumption>0})()
-  const [gateBackStep,setGateBackStep]=useState(()=>initialPathStep===3&&initialHasVehicle?1:0)
+  const [gateBackStep,setGateBackStep]=useState(0)
   const setStep=next=>{
     const target=paths[next]
     if(window.location.pathname!==target)window.history.pushState({step:next},'',target)
@@ -637,9 +632,6 @@ export default function App(){
     window.addEventListener('popstate',onPop)
     return ()=>window.removeEventListener('popstate',onPop)
   },[])
-  useEffect(()=>{
-    try{localStorage.setItem('smartroute-vehicle-config',JSON.stringify(config))}catch{}
-  },[config])
   useEffect(()=>{
     // A direct /route visit must pass through location before the map can render.
     if(step!==3)return
