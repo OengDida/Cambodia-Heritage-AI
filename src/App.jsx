@@ -669,7 +669,7 @@ export default function App(){
     // when this tab has coordinates from an earlier trip.
     setInitialLocation(null)
     setGateBackStep(0)
-    setStep(2)
+    setStep(1)
   }
   const continueToMap=()=>{
     // Reuse the fresh fix from the gate after vehicle setup; do not ask again.
