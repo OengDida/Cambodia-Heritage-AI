@@ -354,14 +354,14 @@ function Setup({onBack,onGenerate,config,setConfig}) {
 }
 const loadTripSnapshot=()=>{
   try{
-    const saved=JSON.parse(localStorage.getItem('smartroute-trip')||'null')
-    if(!saved||!Array.isArray(saved.route))return null
+    const saved=JSON.parse(sessionStorage.getItem('smartroute-trip')||'null')
+    if(!saved)return null
     const validPoint=p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)
     return {
       ...saved,
       origin:validPoint(saved.origin)?saved.origin:null,
       destination:validPoint(saved.destination)?saved.destination:null,
-      route:saved.route.filter(p=>Array.isArray(p)&&Number.isFinite(p[0])&&Number.isFinite(p[1])),
+      route:Array.isArray(saved.route)?saved.route.filter(p=>Array.isArray(p)&&Number.isFinite(p[0])&&Number.isFinite(p[1])):[],
     }
   }catch{return null}
 }
@@ -473,12 +473,12 @@ function TripPlanner({config,onChangeVehicle,initialLocation}) {
   useEffect(()=>{
     try{
       const saved={origin,destination,originName,destinationName,route,distance,duration}
-      if(route.length>1||!localStorage.getItem('smartroute-trip'))localStorage.setItem('smartroute-trip',JSON.stringify(saved))
+      if(route.length>1||!sessionStorage.getItem('smartroute-trip'))sessionStorage.setItem('smartroute-trip',JSON.stringify(saved))
       else {
-        const previous=JSON.parse(localStorage.getItem('smartroute-trip')||'null')
+        const previous=JSON.parse(sessionStorage.getItem('smartroute-trip')||'null')
         const samePoint=(a,b)=>a&&b&&a.lat===b.lat&&a.lng===b.lng
         const sameTrip=samePoint(previous?.origin,origin)&&samePoint(previous?.destination,destination)
-        localStorage.setItem('smartroute-trip',JSON.stringify({...saved,route:sameTrip?previous?.route||[]:[],distance:sameTrip?previous?.distance||0:0,duration:sameTrip?previous?.duration||0:0}))
+        sessionStorage.setItem('smartroute-trip',JSON.stringify({...saved,route:sameTrip?previous?.route||[]:[],distance:sameTrip?previous?.distance||0:0,duration:sameTrip?previous?.duration||0:0}))
       }
     }catch{}
   },[origin,destination,originName,destinationName,route,distance,duration])
