@@ -616,12 +616,9 @@ const stepFromPath=()=>{
 export default function App(){
   const [step,setStepState]=useState(stepFromPath)
   const [config,setConfig]=useState(loadVehicleConfig)
-  const [initialLocation,setInitialLocation]=useState(()=>{
-    try{
-      const saved=JSON.parse(localStorage.getItem('smartroute-initial-location')||'null')
-      return saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lng)?saved:null
-    }catch{return null}
-  })
+  // Coordinates are deliberately session-only: a stored fix must never bypass
+  // the mandatory permission gate on a fresh visit to the map.
+  const [initialLocation,setInitialLocation]=useState(null)
   const hasVehicleConfig=config.capacity>0&&config.consumption>0
   const initialPathStep=stepFromPath()
   const initialHasVehicle=(()=>{const saved=loadVehicleConfig();return saved.capacity>0&&saved.consumption>0})()
@@ -662,28 +659,35 @@ export default function App(){
   },[step,initialLocation])
 
   const goToMap=(backStep=1)=>{
-    if(!hasVehicleConfig){
-      if(initialLocation){setStep(1);return}
-      setGateBackStep(backStep);setStep(2);return
-    }
-    if(initialLocation){setStep(3);return}
-    setGateBackStep(backStep);setStep(2)
+    // Every route entry gets a fresh fix; previously acquired coordinates are
+    // not an alternate path around the required location step.
+    setGateBackStep(backStep)
+    setStep(2)
   }
   const startSmartRoute=()=>{
+    // Starting a new SmartRoute session always verifies location again, even
+    // when this tab has coordinates from an earlier trip.
+    setInitialLocation(null)
     setGateBackStep(0)
-    if(initialLocation){setStep(1);return}
+    setStep(2)
+  }
+  const continueToMap=()=>{
+    // Reuse the fresh fix from the gate after vehicle setup; do not ask again.
+    if(initialLocation){setStep(3);return}
+    setGateBackStep(1)
     setStep(2)
   }
   const finishLocation=location=>{
     setInitialLocation(location)
-    try{localStorage.setItem('smartroute-initial-location',JSON.stringify(location))}catch{}
-    setStep(1)
+    // Skip vehicle setup for returning users who already have a valid profile.
+    // The exact fix is handed to TripPlanner/MapView for the blue dot and center.
+    setStep(hasVehicleConfig?3:1)
   }
   const visibleStep=step===3&&!initialLocation?2:step
   return visibleStep===0
     ?<Welcome onStart={startSmartRoute} onRoute={()=>goToMap(0)}/>
     :visibleStep===1
-      ?<Setup onBack={()=>setStep(0)} onGenerate={()=>goToMap(1)} config={config} setConfig={setConfig}/>
+      ?<Setup onBack={()=>setStep(0)} onGenerate={continueToMap} config={config} setConfig={setConfig}/>
       :visibleStep===2
         ?<LocationGate onSuccess={finishLocation} onBack={()=>setStep(gateBackStep)}/>
         :<TripPlanner config={config} initialLocation={initialLocation} onChangeVehicle={()=>setStep(1)}/>
