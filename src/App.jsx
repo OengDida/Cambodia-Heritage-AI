@@ -612,14 +612,18 @@ const stepFromPath=()=>{
 export default function App(){
   const [step,setStepState]=useState(stepFromPath)
   const [config,setConfig]=useState(defaultVehicleConfig)
+  const [tripConfig,setTripConfig]=useState(defaultVehicleConfig)
   // Coordinates are deliberately session-only: a stored fix must never bypass
   // the mandatory permission gate on a fresh visit to the map.
   const [initialLocation,setInitialLocation]=useState(null)
-  const hasVehicleConfig=config.capacity>0&&config.consumption>0
-  const initialPathStep=stepFromPath()
+  const hasTripConfig=tripConfig.capacity>0&&tripConfig.consumption>0
   const [gateBackStep,setGateBackStep]=useState(0)
   const setStep=next=>{
     const target=paths[next]
+    if(step===1&&next!==1){
+      setTripConfig(config)
+      setConfig(defaultVehicleConfig)
+    }
     if(window.location.pathname!==target)window.history.pushState({step:next},'',target)
     setStepState(next)
     window.scrollTo(0,0)
@@ -628,22 +632,26 @@ export default function App(){
     // Normalize unknown paths (e.g. /foo) back to the root URL
     const known=paths.includes(window.location.pathname.replace(/\/+$/,'')||'/')
     if(!known)window.history.replaceState({step:0},'','/')
-    const onPop=()=>setStepState(stepFromPath())
+    const onPop=()=>{
+      const next=stepFromPath()
+      if(step===1&&next!==1){setTripConfig(config);setConfig(defaultVehicleConfig)}
+      setStepState(next)
+    }
     window.addEventListener('popstate',onPop)
     return ()=>window.removeEventListener('popstate',onPop)
-  },[])
+  },[step,config])
   useEffect(()=>{
     // A direct /route visit must pass through location before the map can render.
     if(step!==3)return
     if(!initialLocation){
-      setGateBackStep(hasVehicleConfig?1:0)
+      setGateBackStep(hasTripConfig?1:0)
       if(window.location.pathname!=='/location')window.history.replaceState({step:2},'','/location')
       setStepState(2)
-    }else if(!hasVehicleConfig){
+    }else if(!hasTripConfig){
       if(window.location.pathname!=='/vehicle')window.history.replaceState({step:1},'','/vehicle')
       setStepState(1)
     }
-  },[step,initialLocation,hasVehicleConfig])
+  },[step,initialLocation,hasTripConfig])
   useEffect(()=>{
     const titles=['SmartRoute AI — Cambodia Trip Planner','Vehicle profile · SmartRoute AI','Location access · SmartRoute AI','Map & Route · SmartRoute AI']
     const visibleStep=step===3&&!initialLocation?2:step
@@ -671,9 +679,9 @@ export default function App(){
   }
   const finishLocation=location=>{
     setInitialLocation(location)
-    // Skip vehicle setup for returning users who already have a valid profile.
+    // Continue with the vehicle profile captured when leaving setup.
     // The exact fix is handed to TripPlanner/MapView for the blue dot and center.
-    setStep(hasVehicleConfig?3:1)
+    setStep(hasTripConfig?3:1)
   }
   const visibleStep=step===3&&!initialLocation?2:step
   return visibleStep===0
@@ -682,5 +690,5 @@ export default function App(){
       ?<Setup onBack={()=>setStep(0)} onGenerate={continueToMap} config={config} setConfig={setConfig}/>
       :visibleStep===2
         ?<LocationGate onSuccess={finishLocation} onBack={()=>setStep(gateBackStep)}/>
-        :<TripPlanner config={config} initialLocation={initialLocation} onChangeVehicle={()=>setStep(1)}/>
+        :<TripPlanner config={tripConfig} initialLocation={initialLocation} onChangeVehicle={()=>setStep(1)}/>
 }
